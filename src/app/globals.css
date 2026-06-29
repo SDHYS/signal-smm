@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-navy: #1f2353;
+  --color-orange: #ef552b;
+  --color-orange-soft: #e97c5e;
+  --color-orange-deep: #c23610;
+  --color-blue: #2e82ff;
+  --color-blue-soft: #8dbbff;
+  --color-ink: #111111;
+  --color-gray: #808791;
+  --color-gray-2: #6e7683;
+  --color-muted: #aaaaaa;
+  --color-soft: #f5f5fa;
+  --color-soft-2: #f6f7fb;
+  --color-line: #e5e5ec;
+
+  --font-sans:
+    Pretendard, "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: var(--color-navy);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 얇은 스크롤바 (서비스 목록 등) */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-navy);
+  border-radius: 999px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-soft);
+  border-radius: 999px;
 }

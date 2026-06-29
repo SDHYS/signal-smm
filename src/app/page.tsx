@@ -1,11 +1,21 @@
+import Sidebar from "@/components/layout/Sidebar";
+import TopBar from "@/components/layout/TopBar";
+import HeroSection from "@/components/home/HeroSection";
+import OrderIntro from "@/components/home/OrderIntro";
+import OrderFlow from "@/components/home/OrderFlow";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-      <h1 className="text-3xl font-bold">SignalSMM</h1>
-      <p className="text-gray-500">소셜미디어 마케팅 쇼핑몰 · 인프라 구성 완료</p>
-      <p className="text-sm text-gray-400">
-        다음 단계: Figma 디자인 기반 화면 구현 (상품/주문/관리자)
-      </p>
-    </main>
+    <div className="flex min-h-screen bg-white">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar />
+        <main className="mx-auto flex w-full max-w-[1380px] flex-col gap-8 px-4 pb-24 sm:px-8">
+          <HeroSection />
+          <OrderIntro />
+          <OrderFlow />
+        </main>
+      </div>
+    </div>
   );
 }
