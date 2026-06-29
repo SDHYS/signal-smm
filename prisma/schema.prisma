@@ -1,0 +1,108 @@
+// SignalSMM - 소셜미디어 마케팅 쇼핑몰 DB 스키마
+// 결제: 무통장입금/계좌이체(수동 입금확인). PG 연동 없음.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── 회원 ─────────────────────────────────────────────
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role     @default(USER)
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ── 상품(SMM 서비스: 인스타 팔로워, 유튜브 조회수 등) ──
+model Product {
+  id          String      @id @default(cuid())
+  category    String // 플랫폼/카테고리: 인스타그램, 유튜브, 틱톡 ...
+  name        String // 예: 인스타그램 한국인 팔로워
+  description String?     @db.Text
+  unitPrice   Int // 1개당 가격(원, 정수)
+  minQty      Int         @default(1)
+  maxQty      Int         @default(100000)
+  isActive    Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+  @@map("products")
+}
+
+// ── 주문 ─────────────────────────────────────────────
+enum OrderStatus {
+  PENDING_PAYMENT // 입금 대기
+  PAID // 입금 확인됨(관리자가 결제완료 처리)
+  PROCESSING // 작업 진행중
+  COMPLETED // 작업 완료
+  CANCELLED // 취소
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNo       String      @unique // 사람이 읽는 주문번호 (예: 20260629-0001)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  status        OrderStatus @default(PENDING_PAYMENT)
+  totalAmount   Int // 총 결제금액(원)
+  depositorName String? // 입금자명
+  memo          String?     @db.Text // 고객 메모
+  adminMemo     String?     @db.Text // 관리자 메모
+  items         OrderItem[]
+  paidAt        DateTime? // 입금확인(결제완료) 시각
+  confirmedById String? // 입금확인 처리한 관리자 id
+  completedAt   DateTime? // 작업완료 시각
+  cancelledAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String // 주문 시점 상품명 스냅샷
+  unitPrice   Int // 주문 시점 단가 스냅샷
+  quantity    Int
+  subtotal    Int // unitPrice * quantity
+  targetUrl   String? // 작업 대상 링크(게시물/계정 URL)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ── 사이트 설정(입금계좌 등 key-value) ───────────────
+model Setting {
+  key       String   @id // 예: bank_name, bank_account, bank_holder, site_name
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

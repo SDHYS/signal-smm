@@ -1,0 +1,24 @@
+# 로컬 개발: PostgreSQL 컨테이너만 띄운다.
+# 사용:  docker compose -f infra/docker-compose.local.yml up -d
+# 앱(Next.js)은 호스트에서 `npm run dev` 로 실행 (포트 3050)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: signalsmm-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: signalsmm
+      POSTGRES_PASSWORD: signalsmm_local_pw
+      POSTGRES_DB: signalsmm
+    ports:
+      - "5433:5432" # 호스트 5433 → 컨테이너 5432 (.env 의 DATABASE_URL 과 일치)
+    volumes:
+      - signalsmm_pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U signalsmm -d signalsmm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  signalsmm_pgdata_local:
