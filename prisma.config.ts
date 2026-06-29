@@ -13,6 +13,8 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env.DATABASE_URL,
+    // 마이그레이션은 풀링(pgbouncer) 연결에서 문제가 생길 수 있어 직접 연결(UNPOOLED)을 우선 사용.
+    // 로컬엔 UNPOOLED 가 없으므로 일반 DATABASE_URL 로 폴백.
+    url: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL,
   },
 });
