@@ -1,9 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Star, UserPlus } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 import { platforms } from "./platforms";
+import { createOrder } from "@/app/actions/order";
+
+export type OrderProduct = {
+  id: string;
+  category: string;
+  name: string;
+  description: string | null;
+  unitPrice: number;
+  minQty: number;
+  maxQty: number;
+};
 
 function StepHeader({ step, title }: { step: string; title: string }) {
   return (
@@ -15,37 +27,61 @@ function StepHeader({ step, title }: { step: string; title: string }) {
 }
 
 const categories = ["일반", "팔로워", "연령별 / 성별"];
-
-type Service = { id: number; title: string; tags: string[]; unitPrice: number };
-const services: Service[] = [
-  { id: 1, title: "한국인 인스타 팔로워", tags: ["일반", "팔로워", "날짜"], unitPrice: 12 },
-  { id: 2, title: "인스타그램 게시물 좋아요", tags: ["일반", "팔로워", "날짜"], unitPrice: 8 },
-  { id: 3, title: "인스타그램 한국인 댓글", tags: ["일반", "팔로워", "날짜"], unitPrice: 30 },
-  { id: 4, title: "인스타그램 동영상 조회수", tags: ["일반", "팔로워", "날짜"], unitPrice: 5 },
-  { id: 5, title: "인스타그램 릴스 노출", tags: ["일반", "팔로워", "날짜"], unitPrice: 15 },
-  { id: 6, title: "인스타그램 저장수", tags: ["일반", "팔로워", "날짜"], unitPrice: 10 },
-];
-
 const detailTabs = ["서비스 설명", "주문 방법", "주의 사항", "FAQ"];
 
-const MIN_QTY = 3;
-const MAX_QTY = 100;
-
-export default function OrderFlow() {
+export default function OrderFlow({
+  isLoggedIn,
+  balance,
+  products,
+}: {
+  isLoggedIn: boolean;
+  balance: number;
+  products: OrderProduct[];
+}) {
+  const router = useRouter();
   const [platformIdx, setPlatformIdx] = useState(-1);
   const [categoryIdx, setCategoryIdx] = useState(0);
-  const [serviceId, setServiceId] = useState<number>(services[0].id);
+  const [serviceId, setServiceId] = useState<string>(products[0]?.id ?? "");
   const [detailTab, setDetailTab] = useState(0);
   const [link, setLink] = useState("");
   const [qty, setQty] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const service = useMemo(
-    () => services.find((s) => s.id === serviceId) ?? services[0],
-    [serviceId],
+  const product = useMemo(
+    () => products.find((p) => p.id === serviceId) ?? products[0],
+    [serviceId, products],
   );
 
+  const minQty = product?.minQty ?? 1;
+  const maxQty = product?.maxQty ?? 100000;
   const quantity = Number(qty) || 0;
-  const amount = quantity * service.unitPrice;
+  const amount = quantity * (product?.unitPrice ?? 0);
+
+  async function handleOrder() {
+    setError(null);
+    if (!isLoggedIn) return setError("로그인 후 주문할 수 있습니다.");
+    if (!product) return setError("서비스를 선택해주세요.");
+    if (!link.trim()) return setError("주문 링크를 입력해주세요.");
+    if (quantity < minQty || quantity > maxQty)
+      return setError(`수량은 ${minQty} ~ ${maxQty} 사이로 입력해주세요.`);
+    if (amount > balance)
+      return setError("잔액이 부족합니다. 잔액충전 후 이용해주세요.");
+
+    setLoading(true);
+    const res = await createOrder({
+      productId: product.id,
+      quantity,
+      targetUrl: link,
+    });
+    setLoading(false);
+    if (res.ok) {
+      router.push("/orders");
+      router.refresh();
+    } else {
+      setError(res.error ?? "주문에 실패했습니다.");
+    }
+  }
 
   return (
     <div className="flex flex-col gap-24">
@@ -78,9 +114,7 @@ export default function OrderFlow() {
                     active ? "block" : "hidden group-hover:block"
                   }`}
                 />
-                <span className="text-center text-lg font-medium text-navy">
-                  {p.name}
-                </span>
+                <span className="text-center text-lg font-medium text-navy">{p.name}</span>
               </button>
             );
           })}
@@ -129,33 +163,29 @@ export default function OrderFlow() {
             })}
           </div>
 
-          {/* 서비스 리스트 */}
+          {/* 서비스 리스트 (DB 상품) */}
           <div className="thin-scrollbar max-h-[420px] overflow-y-auto pr-2">
-            {services.map((s) => {
-              const active = s.id === serviceId;
+            {products.length === 0 && (
+              <p className="py-6 text-base text-gray">등록된 상품이 없습니다.</p>
+            )}
+            {products.map((p) => {
+              const active = p.id === serviceId;
               return (
                 <button
-                  key={s.id}
-                  onClick={() => setServiceId(s.id)}
+                  key={p.id}
+                  onClick={() => setServiceId(p.id)}
                   className="flex w-full items-center justify-between gap-4 border-b border-line/70 py-6 text-left last:border-0"
                 >
                   <div className="flex flex-col gap-2">
-                    <span className="text-lg font-medium text-navy">{s.title}</span>
-                    <span className="flex items-center gap-2 text-sm font-normal text-gray">
-                      {s.tags.map((t, ti) => (
-                        <span key={t} className="flex items-center gap-2">
-                          {ti > 0 && <span className="h-1 w-1 rounded-full bg-line" />}
-                          {t}
-                        </span>
-                      ))}
-                    </span>
+                    <span className="text-lg font-medium text-navy">{p.name}</span>
+                    <span className="text-sm font-normal text-gray">{p.category}</span>
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-8 py-3 text-base font-medium transition ${
                       active ? "bg-blue text-white" : "bg-soft text-gray"
                     }`}
                   >
-                    {s.unitPrice.toLocaleString()}원
+                    {p.unitPrice.toLocaleString()}원
                   </span>
                 </button>
               );
@@ -163,16 +193,18 @@ export default function OrderFlow() {
           </div>
 
           {/* 선택 서비스 설명 */}
-          <div className="flex flex-col gap-3 rounded-xl bg-soft p-6">
-            <div className="flex items-center gap-1">
-              <Star size={22} className="fill-muted text-muted" />
-              <span className="text-lg font-medium text-navy">{service.title}</span>
+          {product && (
+            <div className="flex flex-col gap-3 rounded-xl bg-soft p-6">
+              <div className="flex items-center gap-1">
+                <Star size={22} className="fill-muted text-muted" />
+                <span className="text-lg font-medium text-navy">{product.name}</span>
+              </div>
+              <p className="text-base font-normal leading-[26px] text-gray">
+                {product.description ??
+                  "실제 국내에서 활동하는 사용자가 자연스럽게 반영되는 서비스입니다."}
+              </p>
             </div>
-            <p className="text-base font-normal leading-[26px] text-gray">
-              실제 국내에서 활동하는 인스타그램 사용자가 회원님의 계정을 팔로우하는
-              서비스입니다.
-            </p>
-          </div>
+          )}
         </div>
       </section>
 
@@ -200,22 +232,16 @@ export default function OrderFlow() {
           <div className="flex flex-col gap-10 rounded-2xl bg-soft p-10">
             <DetailBlock title="서비스설명">
               <p className="text-base font-normal leading-[26px] text-gray">
-                회원가입 이후 SNS서포터에서 24시간 언제든 원하는 마케팅 상품을 간편하게
-                주문하세요. 인스타그램 팔로워 늘리기부터 유튜브, 페이스북까지 다양한
-                플랫폼의 맞춤형 마케팅 서비스를 제공하고 있습니다.
-              </p>
-            </DetailBlock>
-            <DetailBlock title="서비스 상세설명">
-              <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
-                {"• 원하는 댓글을 그대로 전달받아 작성합니다.\n• 하단 주문입력창에 1줄당 1개씩 입력합니다.\n• 댓글 내용에 해시태그, @ 입력시 작업이 불가능합니다.\n• #advertiser 가 붙은 광고 게시물은 작업이 불가합니다."}
+                회원가입 이후 24시간 언제든 원하는 마케팅 상품을 간편하게 주문하세요.
+                인스타그램 팔로워 늘리기부터 유튜브, 페이스북까지 다양한 플랫폼의 맞춤형
+                마케팅 서비스를 제공하고 있습니다.
               </p>
             </DetailBlock>
             <DetailBlock title="주문링크 기입방법">
               <p className="text-base font-normal leading-[26px] text-gray">
                 • 인스타그램 게시물 링크를 입력해주세요.
                 <br />
-                게시글 우측 상단 [메뉴] 클릭 → 링크복사 버튼 클릭 → 주문링크에 붙여넣은
-                후 주문
+                게시글 우측 상단 [메뉴] 클릭 → 링크복사 → 주문링크에 붙여넣은 후 주문
                 <br />
                 <span className="text-navy">
                   [링크형식 : https://www.instagram.com/p/xxxxxxxx]
@@ -251,11 +277,12 @@ export default function OrderFlow() {
             value={qty}
             onChange={(e) => setQty(e.target.value.replace(/[^0-9]/g, ""))}
             inputMode="numeric"
-            placeholder={`최소 ${MIN_QTY} ~ 최대 ${MAX_QTY}`}
+            placeholder={`최소 ${minQty} ~ 최대 ${maxQty}`}
             className="w-full rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy placeholder:text-gray focus:border-blue focus:outline-none"
           />
           <p className="text-sm font-normal text-navy">
-            최소 주문가능 수량: {MIN_QTY} - 최대 주문가능 수량: {MAX_QTY}
+            최소 주문가능 수량: {minQty.toLocaleString()} - 최대 주문가능 수량:{" "}
+            {maxQty.toLocaleString()}
           </p>
         </div>
       </section>
@@ -263,18 +290,26 @@ export default function OrderFlow() {
       {/* STEP 06 — 주문금액 */}
       <section className="flex flex-col gap-7">
         <StepHeader step="STEP 06" title="주문금액" />
-        <div className="w-full rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy">
-          ₩{amount.toLocaleString()}
+        <div className="flex items-center justify-between rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy">
+          <span>₩{amount.toLocaleString()}</span>
+          <span className="text-sm text-gray">
+            보유잔액 ₩{balance.toLocaleString()}
+          </span>
         </div>
       </section>
 
       {/* 주문하기 */}
       <div className="flex flex-col gap-5">
-        <button className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5">
-          주문하기
+        {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
+        <button
+          onClick={handleOrder}
+          disabled={loading}
+          className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+        >
+          {loading ? "주문 중..." : "주문하기"}
         </button>
         <p className="text-sm font-normal text-navy">
-          최소 주문가능 수량: 10 - 최대 주문가능 수량: 25000
+          주문 시 보유잔액에서 즉시 차감됩니다.
         </p>
       </div>
     </div>

@@ -1,13 +1,34 @@
 import HeroSection from "@/components/home/HeroSection";
 import OrderIntro from "@/components/home/OrderIntro";
 import OrderFlow from "@/components/home/OrderFlow";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+    select: {
+      id: true,
+      category: true,
+      name: true,
+      description: true,
+      unitPrice: true,
+      minQty: true,
+      maxQty: true,
+    },
+  });
+
   return (
     <div className="flex flex-col gap-8 pt-2">
       <HeroSection />
       <OrderIntro />
-      <OrderFlow />
+      <OrderFlow
+        isLoggedIn={!!user}
+        balance={user?.balance ?? 0}
+        products={products}
+      />
     </div>
   );
 }

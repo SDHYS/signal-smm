@@ -1,45 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const topTabs = ["주문내역", "환불내역"];
 
-const orderFilters = [
-  { label: "전체", count: 11 },
-  { label: "진행중", count: 0 },
-  { label: "완료", count: 0 },
-  { label: "부분완료(미완료수량 자동환불)", count: 0 },
-  { label: "검토중", count: 0 },
-  { label: "환불", count: 0 },
-];
-
-const refundFilters = [
-  { label: "전체", count: 11 },
-  { label: "환불", count: 0 },
-  { label: "부분환불", count: 0 },
-];
-
-type Order = { title: string; status: string; no: string; total: string };
-type Group = { date: string; orders: Order[] };
-
-const make = (n: number, status: string): Order[] =>
-  Array.from({ length: n }, () => ({
-    title: "[0원 이벤트] 임시타이틀",
-    status,
-    no: "#16541616165",
-    total: "00,000원",
-  }));
-
-const orderGroups: Group[] = [
-  { date: "26.02.22", orders: make(4, "결제완료") },
-  { date: "26.02.20", orders: make(5, "결제완료") },
-  { date: "26.02.18", orders: make(2, "결제완료") },
-];
-
-const refundGroups: Group[] = [
-  { date: "26.02.21", orders: make(4, "환불완료") },
-  { date: "26.02.15", orders: make(2, "환불완료") },
-];
+export type OrderItem = {
+  id: string;
+  title: string;
+  status: string;
+  no: string;
+  total: string;
+};
+export type OrderGroup = { date: string; orders: OrderItem[] };
 
 function Meta({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
@@ -51,7 +24,7 @@ function Meta({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function OrderRow({ order, accentStatus }: { order: Order; accentStatus: boolean }) {
+function Row({ order, accentStatus }: { order: OrderItem; accentStatus: boolean }) {
   return (
     <div className="flex flex-col items-start justify-between gap-4 border-b border-line py-7 lg:flex-row lg:items-center">
       <div className="flex flex-col gap-3">
@@ -80,18 +53,24 @@ function OrderRow({ order, accentStatus }: { order: Order; accentStatus: boolean
   );
 }
 
-export default function OrderHistory() {
+export default function OrderHistory({
+  isLoggedIn,
+  orderGroups,
+  refundGroups,
+  orderTotal,
+  refundTotal,
+}: {
+  isLoggedIn: boolean;
+  orderGroups: OrderGroup[];
+  refundGroups: OrderGroup[];
+  orderTotal: number;
+  refundTotal: number;
+}) {
   const [tab, setTab] = useState(0);
-  const [filter, setFilter] = useState(0);
 
   const isRefund = tab === 1;
-  const filters = isRefund ? refundFilters : orderFilters;
   const groups = isRefund ? refundGroups : orderGroups;
-
-  function selectTab(i: number) {
-    setTab(i);
-    setFilter(0);
-  }
+  const total = isRefund ? refundTotal : orderTotal;
 
   return (
     <div className="flex flex-col gap-12 pt-2">
@@ -109,7 +88,7 @@ export default function OrderHistory() {
             return (
               <button
                 key={t}
-                onClick={() => selectTab(i)}
+                onClick={() => setTab(i)}
                 className={`rounded-full px-6 py-3 text-sm font-medium transition ${
                   active ? "bg-blue text-white" : "bg-white text-gray-2 hover:bg-soft"
                 }`}
@@ -122,43 +101,41 @@ export default function OrderHistory() {
       </div>
 
       <div className="flex flex-col gap-7">
-        {/* 상태 필터 */}
-        <div className="flex flex-wrap items-center gap-5">
-          {filters.map((s, i) => {
-            const active = i === filter;
-            return (
-              <button key={s.label} onClick={() => setFilter(i)} className="flex items-center gap-1.5">
-                <span className={`text-sm ${active ? "font-medium text-orange" : "font-normal text-[#999999]"}`}>
-                  {s.label}
-                </span>
-                <span
-                  className={`rounded-full px-3 text-sm font-medium ${
-                    active ? "bg-orange text-white" : "bg-[#F4F4F4] text-[#999999]"
-                  }`}
-                >
-                  {s.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <p className="flex items-center gap-1 text-lg">
+          <span className="font-normal text-gray">전체</span>
+          <span className="font-medium text-orange">{total}</span>
+        </p>
 
-        {/* 날짜별 목록 */}
-        <div className="flex flex-col gap-15">
-          {groups.map((g) => (
-            <div key={g.date} className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-normal leading-[30px] text-gray">주문날짜</span>
-                <span className="text-xl font-medium leading-[30px] text-navy">{g.date}</span>
+        {!isLoggedIn ? (
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-soft px-6 py-5">
+            <span className="text-base font-medium text-navy">
+              로그인 후 주문내역을 확인할 수 있습니다.
+            </span>
+            <Link href="/login" className="rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
+              로그인
+            </Link>
+          </div>
+        ) : groups.length === 0 ? (
+          <p className="rounded-xl bg-soft p-8 text-base text-gray">
+            {isRefund ? "환불 내역이 없습니다." : "주문 내역이 없습니다."}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-15">
+            {groups.map((g) => (
+              <div key={g.date} className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-normal leading-[30px] text-gray">주문날짜</span>
+                  <span className="text-xl font-medium leading-[30px] text-navy">{g.date}</span>
+                </div>
+                <div className="flex flex-col border-t border-navy">
+                  {g.orders.map((o) => (
+                    <Row key={o.id} order={o} accentStatus={!isRefund} />
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col border-t border-navy">
-                {g.orders.map((o, i) => (
-                  <OrderRow key={i} order={o} accentStatus={!isRefund} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
