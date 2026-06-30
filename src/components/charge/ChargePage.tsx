@@ -21,12 +21,45 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function LabeledInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-2">
+      <span className="text-sm font-medium text-[#222222]">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded border border-line px-4 py-5 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+      />
+    </div>
+  );
+}
+
 const won = (n: number) => `${n.toLocaleString()}원`;
 
 export default function ChargePage() {
   const [amount, setAmount] = useState(0);
   const [depositor, setDepositor] = useState("");
   const [receipt, setReceipt] = useState(0);
+
+  // 세금계산서 정보
+  const [companyName, setCompanyName] = useState("");
+  const [bizNo, setBizNo] = useState("");
+  const [ceo, setCeo] = useState("");
+  const [managerPhone, setManagerPhone] = useState("");
+  const [taxEmail, setTaxEmail] = useState("");
+  // 현금영수증 정보
+  const [cashReceiptNo, setCashReceiptNo] = useState("");
 
   const balance = 0; // 현재 보유잔액 (추후 회원 데이터 연동)
   const vat = Math.round(amount * 0.1);
@@ -132,6 +165,31 @@ export default function ChargePage() {
                 );
               })}
             </div>
+
+            {/* 세금계산서 정보 */}
+            {receipt === 1 && (
+              <div className="flex flex-col gap-7">
+                <div className="flex flex-col gap-6 sm:flex-row">
+                  <LabeledInput label="회사명" placeholder="회사명 입력" value={companyName} onChange={setCompanyName} />
+                  <LabeledInput label="사업자등록번호" placeholder="'-' 없이 입력" value={bizNo} onChange={setBizNo} />
+                </div>
+                <div className="flex flex-col gap-6 sm:flex-row">
+                  <LabeledInput label="대표자" placeholder="대표자명" value={ceo} onChange={setCeo} />
+                  <LabeledInput label="담당자 연락처" placeholder="연락처 입력" value={managerPhone} onChange={setManagerPhone} />
+                </div>
+                <LabeledInput label="이메일" placeholder="이메일 입력" value={taxEmail} onChange={setTaxEmail} />
+              </div>
+            )}
+
+            {/* 현금영수증 정보 */}
+            {receipt === 2 && (
+              <LabeledInput
+                label="현금영수증 발급 번호"
+                placeholder="휴대폰 번호 또는 현금영수증 카드번호"
+                value={cashReceiptNo}
+                onChange={setCashReceiptNo}
+              />
+            )}
 
             <div className="flex flex-col gap-9">
               <div className="flex flex-col gap-5">
