@@ -73,3 +73,52 @@ export async function createOrder(input: {
   revalidatePath("/");
   return { ok: true, orderNo };
 }
+
+// ── 관리자: 주문 상태 변경 ────────────────────────────
+type OrderStatus = "PAID" | "PROCESSING" | "COMPLETED";
+
+export async function setOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<OrderResult> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, error: "권한이 없습니다." };
+
+  await prisma.order.update({
+    where: { id },
+    data: {
+      status,
+      completedAt: status === "COMPLETED" ? new Date() : null,
+    },
+  });
+  revalidatePath("/admin/orders");
+  revalidatePath("/orders");
+  return { ok: true };
+}
+
+// ── 관리자: 주문 환불(취소 + 잔액 복구) ───────────────
+export async function refundOrder(id: string): Promise<OrderResult> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, error: "권한이 없습니다." };
+
+  const order = await prisma.order.findUnique({ where: { id } });
+  if (!order) return { ok: false, error: "주문을 찾을 수 없습니다." };
+  if (order.status === "CANCELLED")
+    return { ok: false, error: "이미 환불된 주문입니다." };
+
+  await prisma.$transaction([
+    prisma.order.update({
+      where: { id },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    }),
+    prisma.user.update({
+      where: { id: order.userId },
+      data: { balance: { increment: order.totalAmount } },
+    }),
+  ]);
+  revalidatePath("/admin/orders");
+  revalidatePath("/orders");
+  return { ok: true };
+}

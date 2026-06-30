@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import AdminNav from "@/components/admin/AdminNav";
 
 export default async function AdminLayout({
   children,
@@ -28,7 +29,10 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1100px] px-8 py-10">{children}</main>
+      <div className="mx-auto max-w-[1100px] px-8 pt-8">
+        <AdminNav />
+      </div>
+      <main className="mx-auto max-w-[1100px] px-8 py-8">{children}</main>
     </div>
   );
 }

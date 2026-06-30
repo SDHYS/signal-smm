@@ -27,6 +27,7 @@ model User {
   role          Role     @default(USER)
   orders        Order[]
   charges       ChargeRequest[]
+  inquiries     Inquiry[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -136,4 +137,61 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ── 공지사항 ─────────────────────────────────────────
+model Notice {
+  id         String   @id @default(cuid())
+  title      String
+  content    String   @db.Text
+  authorName String   @default("관리자")
+  views      Int      @default(0)
+  pinned     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("notices")
+}
+
+// ── 블로그 ───────────────────────────────────────────
+model BlogPost {
+  id           String   @id @default(cuid())
+  category     String   @default("업데이트") // 인스타그램/네이버/유튜브/틱톡/업데이트
+  title        String
+  content      String   @db.Text
+  authorName   String   @default("관리자")
+  thumbnailUrl String?
+  tags         String[] @default([])
+  views        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@index([createdAt])
+  @@map("blog_posts")
+}
+
+// ── 1:1 문의 ─────────────────────────────────────────
+enum InquiryStatus {
+  PENDING // 답변대기
+  ANSWERED // 답변완료
+}
+
+model Inquiry {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  title        String
+  content      String        @db.Text
+  status       InquiryStatus @default(PENDING)
+  answer       String?       @db.Text
+  answeredById String?
+  answeredAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("inquiries")
 }
