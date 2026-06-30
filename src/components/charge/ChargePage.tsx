@@ -1,6 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createChargeRequest } from "@/app/actions/charge";
+
+type Bank = { bankName: string; account: string; holder: string };
+type ChargeStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
+type History = {
+  id: string;
+  amount: number;
+  total: number;
+  depositorName: string;
+  status: ChargeStatus;
+  createdAt: string;
+};
 
 const presets = [
   { label: "+ 1만원", value: 10000 },
@@ -15,10 +29,16 @@ const presets = [
 
 const receiptOptions = ["신청안함", "세금계산서", "현금영수증"];
 
+const statusMeta: Record<ChargeStatus, { label: string; cls: string }> = {
+  PENDING: { label: "입금대기", cls: "bg-orange/10 text-orange" },
+  CONFIRMED: { label: "충전완료", cls: "bg-blue/10 text-blue" },
+  CANCELLED: { label: "취소", cls: "bg-soft text-gray" },
+};
+
+const won = (n: number) => `${n.toLocaleString()}원`;
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-[28px] font-bold leading-[38px] text-navy">{children}</h2>
-  );
+  return <h2 className="text-[28px] font-bold leading-[38px] text-navy">{children}</h2>;
 }
 
 function LabeledInput({
@@ -45,25 +65,65 @@ function LabeledInput({
   );
 }
 
-const won = (n: number) => `${n.toLocaleString()}원`;
-
-export default function ChargePage() {
+export default function ChargePage({
+  isLoggedIn,
+  bank,
+  history,
+}: {
+  isLoggedIn: boolean;
+  bank: Bank;
+  history: History[];
+}) {
+  const router = useRouter();
   const [amount, setAmount] = useState(0);
   const [depositor, setDepositor] = useState("");
   const [receipt, setReceipt] = useState(0);
 
-  // 세금계산서 정보
   const [companyName, setCompanyName] = useState("");
   const [bizNo, setBizNo] = useState("");
   const [ceo, setCeo] = useState("");
   const [managerPhone, setManagerPhone] = useState("");
   const [taxEmail, setTaxEmail] = useState("");
-  // 현금영수증 정보
   const [cashReceiptNo, setCashReceiptNo] = useState("");
 
-  const balance = 0; // 현재 보유잔액 (추후 회원 데이터 연동)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{ total: number; depositor: string } | null>(null);
+
   const vat = Math.round(amount * 0.1);
   const total = amount + vat;
+
+  async function handleSubmit() {
+    setError(null);
+    setDone(null);
+    if (!isLoggedIn) {
+      setError("로그인 후 충전할 수 있습니다.");
+      return;
+    }
+    if (amount <= 0) {
+      setError("충전 금액을 선택해주세요.");
+      return;
+    }
+    if (!depositor.trim()) {
+      setError("입금자명을 작성해주세요.");
+      return;
+    }
+    setLoading(true);
+    const res = await createChargeRequest({
+      amount,
+      depositorName: depositor,
+      receiptType: receiptOptions[receipt],
+    });
+    setLoading(false);
+    if (res.ok) {
+      setDone({ total, depositor: depositor.trim() });
+      setAmount(0);
+      setDepositor("");
+      router.refresh();
+    } else {
+      setError(res.error ?? "충전 신청에 실패했습니다.");
+    }
+  }
 
   return (
     <div className="flex flex-col gap-12 pt-2">
@@ -71,9 +131,7 @@ export default function ChargePage() {
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
           <p className="text-base font-normal text-[#767676]">임시타이틀</p>
-          <h1 className="text-[40px] font-bold leading-[52px] text-black">
-            잔액충전
-          </h1>
+          <h1 className="text-[40px] font-bold leading-[52px] text-black">잔액충전</h1>
         </div>
         <div className="flex items-center gap-3">
           <span className="rounded-full bg-blue px-6 py-3 text-sm font-medium text-white">
@@ -81,6 +139,17 @@ export default function ChargePage() {
           </span>
         </div>
       </div>
+
+      {!isLoggedIn && (
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-soft px-6 py-5">
+          <span className="text-base font-medium text-navy">
+            충전은 로그인 후 이용할 수 있습니다.
+          </span>
+          <Link href="/login" className="rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
+            로그인
+          </Link>
+        </div>
+      )}
 
       <div className="flex flex-col gap-16">
         {/* 충전 금액 선택 */}
@@ -102,17 +171,11 @@ export default function ChargePage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-end justify-between rounded-[10px] bg-soft p-10">
                 <div className="flex flex-col gap-4">
-                  <span className="text-lg font-normal leading-[26px] text-gray">
-                    충전후 잔액
-                  </span>
+                  <span className="text-lg font-normal leading-[26px] text-gray">충전 금액</span>
                   <div className="flex items-end gap-2">
-                    <span className="text-[26px] font-semibold leading-7 text-navy">
-                      {won(balance + amount)}
-                    </span>
+                    <span className="text-[26px] font-semibold leading-7 text-navy">{won(amount)}</span>
                     {amount > 0 && (
-                      <span className="text-base font-normal text-[#04B014]">
-                        +{amount.toLocaleString()}원 충전
-                      </span>
+                      <span className="text-base font-normal text-[#04B014]">+ VAT {won(vat)}</span>
                     )}
                   </div>
                 </div>
@@ -127,7 +190,7 @@ export default function ChargePage() {
           </div>
         </section>
 
-        {/* 입금자명 작성 */}
+        {/* 입금자명 */}
         <section className="flex flex-col gap-8">
           <SectionTitle>입금자명 작성</SectionTitle>
           <div className="flex flex-col gap-3">
@@ -166,7 +229,6 @@ export default function ChargePage() {
               })}
             </div>
 
-            {/* 세금계산서 정보 */}
             {receipt === 1 && (
               <div className="flex flex-col gap-7">
                 <div className="flex flex-col gap-6 sm:flex-row">
@@ -180,37 +242,63 @@ export default function ChargePage() {
                 <LabeledInput label="이메일" placeholder="이메일 입력" value={taxEmail} onChange={setTaxEmail} />
               </div>
             )}
-
-            {/* 현금영수증 정보 */}
             {receipt === 2 && (
-              <LabeledInput
-                label="휴대폰번호"
-                placeholder="“-” 없이 입력"
-                value={cashReceiptNo}
-                onChange={setCashReceiptNo}
-              />
+              <LabeledInput label="휴대폰번호" placeholder="“-” 없이 입력" value={cashReceiptNo} onChange={setCashReceiptNo} />
             )}
 
             <div className="flex flex-col gap-9">
               <div className="flex flex-col gap-5">
-                {/* 결제 금액 */}
                 <div className="flex items-end justify-between rounded-xl border border-line p-10">
                   <div className="flex flex-col gap-3">
-                    <span className="text-xl font-normal leading-[30px] text-gray">
-                      결제 금액
-                    </span>
+                    <span className="text-xl font-normal leading-[30px] text-gray">결제 금액</span>
                     <span className="text-xl font-medium leading-[26px] text-navy">
-                      충전 {amount.toLocaleString()}원 + VAT {vat.toLocaleString()}원
+                      충전 {won(amount)} + VAT {won(vat)}
                     </span>
                   </div>
-                  <span className="text-[30px] font-semibold leading-7 text-navy">
-                    {won(total)}
-                  </span>
+                  <span className="text-[30px] font-semibold leading-7 text-navy">{won(total)}</span>
                 </div>
 
-                <button className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5">
-                  무통장입금 바로가기
+                {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+                >
+                  {loading ? "신청 중..." : "무통장입금 바로가기"}
                 </button>
+
+                {/* 입금 안내 (신청 완료 후) */}
+                {done && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-blue/40 bg-blue/5 p-8">
+                    <p className="text-lg font-semibold text-navy">
+                      충전 신청 완료 — 아래 계좌로 입금해주세요
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 text-base text-navy sm:grid-cols-2">
+                      <p>
+                        <span className="text-gray">입금 계좌</span>{" "}
+                        <span className="font-medium">
+                          {bank.bankName} {bank.account}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="text-gray">예금주</span>{" "}
+                        <span className="font-medium">{bank.holder}</span>
+                      </p>
+                      <p>
+                        <span className="text-gray">입금 금액</span>{" "}
+                        <span className="font-semibold text-orange">{won(done.total)}</span>
+                      </p>
+                      <p>
+                        <span className="text-gray">입금자명</span>{" "}
+                        <span className="font-medium">{done.depositor}</span>
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray">
+                      입금이 확인되면 관리자 승인 후 잔액에 반영됩니다.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* 안내사항 */}
@@ -219,26 +307,55 @@ export default function ChargePage() {
                 <div className="text-base leading-[26px]">
                   <p>
                     <span className="text-gray">• </span>
-                    <span className="font-medium text-navy">
-                      충전 신청 후 입금을 진행해야 합니다.
-                    </span>
-                    <span className="text-gray">
-                      {" "}
-                      신청 시 계좌번호를 확인할 수 있습니다.
-                    </span>
+                    <span className="font-medium text-navy">충전 신청 후 입금을 진행해야 합니다.</span>
+                    <span className="text-gray"> 신청 시 계좌번호를 확인할 수 있습니다.</span>
                   </p>
+                  <p className="text-gray">• 현금영수증 및 세금계산서는 영업일 24시간 내 자동 발행됩니다.</p>
                   <p className="text-gray">
-                    • 현금영수증 및 세금계산서는 영업일 24시간 내 자동 발행됩니다.
-                  </p>
-                  <p className="text-gray">
-                    • 부가세를 제외한 금액만 이체하셨다면, 하단의 &apos;입금 대기&apos;
-                    화면에서 부족한 금액을 추가로 송금하시면 자동으로 충전이 완료됩니다.
+                    • 입금자명이 신청과 다르면 자동 반영되지 않을 수 있습니다.
                   </p>
                 </div>
               </div>
             </div>
           </div>
         </section>
+
+        {/* 내 충전 신청 내역 */}
+        {isLoggedIn && (
+          <section className="flex flex-col gap-7">
+            <SectionTitle>내 충전 신청 내역</SectionTitle>
+            {history.length === 0 ? (
+              <p className="rounded-xl bg-soft p-8 text-base text-gray">
+                충전 신청 내역이 없습니다.
+              </p>
+            ) : (
+              <div className="flex flex-col border-t border-navy">
+                {history.map((h) => {
+                  const m = statusMeta[h.status];
+                  return (
+                    <div
+                      key={h.id}
+                      className="flex items-center justify-between gap-4 border-b border-line py-6"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-lg font-medium text-navy">
+                          {won(h.amount)} 충전
+                        </span>
+                        <span className="text-sm text-gray">
+                          입금 {won(h.total)} · 입금자 {h.depositorName} ·{" "}
+                          {new Date(h.createdAt).toLocaleDateString("ko-KR")}
+                        </span>
+                      </div>
+                      <span className={`rounded-full px-4 py-2 text-sm font-medium ${m.cls}`}>
+                        {m.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

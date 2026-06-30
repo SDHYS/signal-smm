@@ -26,10 +26,38 @@ model User {
   balance       Int      @default(0) // 보유잔액(원)
   role          Role     @default(USER)
   orders        Order[]
+  charges       ChargeRequest[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@map("users")
+}
+
+// ── 잔액충전 신청(무통장입금 수동확인) ──────────────
+enum ChargeStatus {
+  PENDING // 입금 대기
+  CONFIRMED // 입금 확인됨(잔액 반영 완료)
+  CANCELLED // 취소
+}
+
+model ChargeRequest {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  amount        Int // 충전 금액(원) — 확인 시 balance 에 가산
+  vat           Int          @default(0) // 부가세
+  total         Int // 입금해야 할 총액(amount + vat)
+  depositorName String // 입금자명
+  receiptType   String       @default("신청안함") // 신청안함/세금계산서/현금영수증
+  status        ChargeStatus @default(PENDING)
+  confirmedById String? // 입금확인 처리한 관리자
+  confirmedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("charge_requests")
 }
 
 // ── 상품(SMM 서비스: 인스타 팔로워, 유튜브 조회수 등) ──
