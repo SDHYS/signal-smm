@@ -1,50 +1,28 @@
-import type { ReactNode } from "react";
-import { MapPin, Globe, TrendingUp, Settings2, Star } from "lucide-react";
-import {
-  SiYoutube,
-  SiFacebook,
-  SiTiktok,
-  SiTelegram,
-  SiKakaotalk,
-  SiThreads,
-  SiNaver,
-  SiX,
-} from "react-icons/si";
+// 플랫폼 아이콘: 기본/호버 이미지 (public/platforms). 라벨은 기본 아이콘 파일명 기준.
+export type Platform = { name: string; def: string; hover: string };
 
-export type Platform = { name: string; icon: ReactNode };
-
-// 브랜드 아이콘이 없는 커머스는 색상 타일 + 짧은 라벨로 대체
-function TextTile({ label, bg, color = "#ffffff" }: { label: string; bg: string; color?: string }) {
-  return (
-    <span
-      className="flex h-14 w-14 items-center justify-center rounded-lg text-center text-[13px] font-semibold leading-tight"
-      style={{ background: bg, color }}
-    >
-      {label}
-    </span>
-  );
-}
+const base = "/platforms";
 
 export const platforms: Platform[] = [
-  { name: "국내 서비스", icon: <MapPin size={40} className="text-[#2E82FF]" strokeWidth={1.5} /> },
-  { name: "해외 서비스", icon: <Globe size={40} className="text-[#52CC8F]" strokeWidth={1.5} /> },
-  { name: "상위노출", icon: <TrendingUp size={40} className="text-[#EF552B]" strokeWidth={1.5} /> },
-  { name: "관리서비스", icon: <Settings2 size={40} className="text-[#8B5CF6]" strokeWidth={1.5} /> },
-  { name: "유튜브", icon: <SiYoutube size={48} className="text-[#FF0302]" /> },
-  { name: "페이스북", icon: <SiFacebook size={48} className="text-[#0866FF]" /> },
-  { name: "틱톡", icon: <SiTiktok size={44} className="text-black" /> },
-  { name: "텔레그램", icon: <SiTelegram size={48} className="text-[#229ED9]" /> },
-  { name: "카카오", icon: <SiKakaotalk size={48} className="text-[#3E1918]" /> },
-  { name: "쓰레드", icon: <SiThreads size={46} className="text-black" /> },
-  { name: "트위터", icon: <SiX size={42} className="text-black" /> },
-  { name: "N포털", icon: <SiNaver size={36} className="text-[#03C75A]" /> },
-  { name: "N플레이스", icon: <MapPin size={40} className="text-[#03C75A]" strokeWidth={1.8} /> },
-  { name: "N베포", icon: <SiNaver size={36} className="text-[#03C75A]" /> },
-  { name: "무신사", icon: <TextTile label="MUSINSA" bg="#000000" /> },
-  { name: "쿠팡", icon: <TextTile label="쿠팡" bg="#F7522F" /> },
-  { name: "오늘의집", icon: <TextTile label="오늘의집" bg="#35C5F0" /> },
-  { name: "올리브영", icon: <TextTile label="OLIVE" bg="#9FCE2D" /> },
-  { name: "마켓컬리", icon: <TextTile label="Kurly" bg="#5F0080" /> },
-  { name: "배달의 민족", icon: <TextTile label="배민" bg="#2AC1BC" /> },
-  { name: "즐겨찾기", icon: <Star size={42} className="fill-[#FFC833] text-[#FFC833]" /> },
+  { name: "국내서비스", def: `${base}/국내서비스.png`, hover: `${base}/국내서비스_호버.png` },
+  { name: "해외서비스", def: `${base}/해외서비스.png`, hover: `${base}/해외서비스_호버.png` },
+  { name: "상위노출", def: `${base}/상위노출.png`, hover: `${base}/상위노출_호버.png` },
+  { name: "관리서비스", def: `${base}/관리서비스.png`, hover: `${base}/관리서비스_호버.png` },
+  { name: "유튜브", def: `${base}/유튜브.png`, hover: `${base}/유튜브_호버.png` },
+  { name: "페이스북", def: `${base}/페이스북.png`, hover: `${base}/페이스북_호버.png` },
+  { name: "틱톡", def: `${base}/틱톡.png`, hover: `${base}/틱톡_호버.png` },
+  { name: "텔레그램", def: `${base}/텔레그램.png`, hover: `${base}/텔레그램_호버.png` },
+  { name: "카카오", def: `${base}/카카오.png`, hover: `${base}/카카오톡_호버.png` },
+  { name: "쓰레드", def: `${base}/쓰레드.png`, hover: `${base}/쓰레드_호버.png` },
+  { name: "X트위터", def: `${base}/X트위터.png`, hover: `${base}/X트위터_호버.png` },
+  { name: "네이버", def: `${base}/네이버.png`, hover: `${base}/네이버_호버.png` },
+  { name: "네이버플레이스", def: `${base}/네이버플레이스.png`, hover: `${base}/네이버플레이스_호버.png` },
+  { name: "네이버블로그", def: `${base}/네이버블로그.png`, hover: `${base}/네이버블로그_호버.png` },
+  { name: "무신사", def: `${base}/무신사.png`, hover: `${base}/무신사_호버.png` },
+  { name: "쿠팡", def: `${base}/쿠팡.png`, hover: `${base}/쿠팡_호버.png` },
+  { name: "오늘의집", def: `${base}/오늘의집.png`, hover: `${base}/오늘의집_호버.png` },
+  { name: "올리브영", def: `${base}/올리브영.png`, hover: `${base}/올리브영_호버.png` },
+  { name: "마켓컬리", def: `${base}/마켓컬리.png`, hover: `${base}/마켓컬리_호버.png` },
+  { name: "배달의민족", def: `${base}/배달의민족.png`, hover: `${base}/배달의민족_호버.png` },
+  { name: "즐겨찾기", def: `${base}/즐겨찾기.png`, hover: `${base}/즐겨찾기_호버.png` },
 ];
