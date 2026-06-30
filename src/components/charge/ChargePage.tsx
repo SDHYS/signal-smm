@@ -184,8 +184,8 @@ export default function ChargePage() {
             {/* 현금영수증 정보 */}
             {receipt === 2 && (
               <LabeledInput
-                label="현금영수증 발급 번호"
-                placeholder="휴대폰 번호 또는 현금영수증 카드번호"
+                label="휴대폰번호"
+                placeholder="“-” 없이 입력"
                 value={cashReceiptNo}
                 onChange={setCashReceiptNo}
               />
