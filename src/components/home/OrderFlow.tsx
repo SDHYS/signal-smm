@@ -61,31 +61,23 @@ export default function OrderFlow() {
                 onClick={() => setPlatformIdx(i)}
                 className="group flex flex-col items-center gap-3"
               >
-                <span
-                  className={`flex h-[120px] w-[120px] items-center justify-center rounded-2xl transition ${
-                    active
-                      ? "bg-white shadow-[4px_4px_6px_rgba(34,34,34,0.30)] outline outline-1 outline-white"
-                      : "bg-soft-2"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.def}
+                  alt={p.name}
+                  className={`h-[120px] w-[120px] object-contain ${
+                    active ? "hidden" : "block group-hover:hidden"
                   }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.def}
-                    alt={p.name}
-                    className={`h-[56px] w-[56px] object-contain ${
-                      active ? "hidden" : "block group-hover:hidden"
-                    }`}
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.hover}
-                    alt=""
-                    aria-hidden
-                    className={`h-[56px] w-[56px] object-contain ${
-                      active ? "block" : "hidden group-hover:block"
-                    }`}
-                  />
-                </span>
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.hover}
+                  alt=""
+                  aria-hidden
+                  className={`h-[120px] w-[120px] object-contain ${
+                    active ? "block" : "hidden group-hover:block"
+                  }`}
+                />
                 <span className="text-center text-lg font-medium text-navy">
                   {p.name}
                 </span>
