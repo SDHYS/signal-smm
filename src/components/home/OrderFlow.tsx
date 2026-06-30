@@ -32,7 +32,7 @@ const MIN_QTY = 3;
 const MAX_QTY = 100;
 
 export default function OrderFlow() {
-  const [platformIdx, setPlatformIdx] = useState(0);
+  const [platformIdx, setPlatformIdx] = useState(-1);
   const [categoryIdx, setCategoryIdx] = useState(0);
   const [serviceId, setServiceId] = useState<number>(services[0].id);
   const [detailTab, setDetailTab] = useState(0);
