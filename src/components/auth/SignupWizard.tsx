@@ -187,7 +187,7 @@ export default function SignupWizard() {
     });
     setLoading(false);
     if (res.ok) {
-      router.push("/");
+      setStep(4);
       router.refresh();
     } else {
       setError(res.error ?? "회원가입에 실패했습니다.");
@@ -278,6 +278,30 @@ export default function SignupWizard() {
             onNext={() => setStep(3)}
             nextEnabled={step2Valid}
           />
+        </div>
+      </Shell>
+    );
+
+  // step 4 — 가입 완료
+  if (step === 4)
+    return (
+      <Shell step={4} title="가입이 완료되었어요" subtitle="이제 SignalSMM의 모든 서비스를 이용할 수 있습니다.">
+        <div className="flex w-full flex-col items-center gap-8 py-6">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-blue text-white">
+            <Check size={44} strokeWidth={2.5} />
+          </span>
+          <p className="text-center text-base text-gray">
+            환영합니다! 잔액을 충전하고 첫 주문을 시작해보세요.
+          </p>
+          <button
+            onClick={() => {
+              router.push("/");
+              router.refresh();
+            }}
+            className="flex h-[54px] w-full items-center justify-center rounded bg-black text-base font-medium text-white transition hover:opacity-90"
+          >
+            시작하기
+          </button>
         </div>
       </Shell>
     );

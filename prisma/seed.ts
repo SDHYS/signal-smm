@@ -52,6 +52,24 @@ async function main() {
     }
   }
 
+  // 샘플 공지/블로그 (없을 때만)
+  if ((await prisma.notice.count()) === 0) {
+    await prisma.notice.createMany({
+      data: [
+        { title: "[안내] SignalSMM 서비스 오픈 안내", content: "안녕하세요. SignalSMM 입니다.\n\n무통장입금 충전 후 다양한 SNS 마케팅 서비스를 이용하실 수 있습니다. 많은 이용 부탁드립니다.", pinned: true },
+        { title: "[공지] 충전 및 입금 확인 안내", content: "충전 신청 후 안내된 계좌로 입금해주시면, 관리자 확인 후 잔액에 반영됩니다. 입금자명을 신청 시와 동일하게 입력해주세요." },
+      ],
+    });
+  }
+  if ((await prisma.blogPost.count()) === 0) {
+    await prisma.blogPost.createMany({
+      data: [
+        { category: "인스타그램", title: "[TOP5] 인스타그램 자동 팔로워 늘리기 사이트 5 추천", content: "인스타그램 팔로워를 자연스럽게 늘리는 방법과 추천 서비스를 정리했습니다.", tags: ["인스타그램", "팔로워"] },
+        { category: "유튜브", title: "유튜브 조회수 구매 전 꼭 체크해야 할 중요한 팁", content: "저렴한 조회수의 함정과 유효 조회수 확인 방법을 안내합니다.", tags: ["유튜브", "조회수"] },
+      ],
+    });
+  }
+
   console.log("✅ 시드 완료:", { adminEmail, products: products.length });
 }
 
