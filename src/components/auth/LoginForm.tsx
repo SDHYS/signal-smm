@@ -2,15 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { loginAction } from "@/app/actions/auth";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [keepLogin, setKeepLogin] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: 실제 인증 연동 (서버 액션 / API)
+    setError(null);
+    setLoading(true);
+    const res = await loginAction({ username: userId, password });
+    setLoading(false);
+    if (res.ok) {
+      router.push("/");
+      router.refresh();
+    } else {
+      setError(res.error ?? "로그인에 실패했습니다.");
+    }
   }
 
   return (
@@ -77,11 +91,16 @@ export default function LoginForm() {
               </div>
             </div>
 
+            {error && (
+              <p className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="flex h-[54px] w-full items-center justify-center rounded bg-black text-base font-medium text-white transition hover:opacity-90"
+              disabled={loading}
+              className="flex h-[54px] w-full items-center justify-center rounded bg-black text-base font-medium text-white transition hover:opacity-90 disabled:opacity-60"
             >
-              로그인
+              {loading ? "로그인 중..." : "로그인"}
             </button>
 
             <div className="flex items-center gap-3 text-sm">

@@ -14,6 +14,7 @@ async function main() {
     where: { email: adminEmail },
     update: {},
     create: {
+      username: process.env.SEED_ADMIN_USERNAME ?? "admin",
       email: adminEmail,
       passwordHash: await bcrypt.hash(adminPw, 10),
       name: "관리자",

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   LogIn,
+  LogOut,
   UserPlus,
   Globe,
   Wallet,
@@ -15,12 +16,12 @@ import {
   Megaphone,
   type LucideIcon,
 } from "lucide-react";
+import { logoutAction } from "@/app/actions/auth";
+import type { CurrentUser } from "@/lib/auth";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
-const memberMenu: NavItem[] = [
-  { label: "로그인", href: "/login", icon: LogIn },
-  { label: "회원가입", href: "/signup", icon: UserPlus },
+const accountMenu: NavItem[] = [
   { label: "블로그", href: "/blog", icon: Globe },
   { label: "잔액충전", href: "/charge", icon: Wallet },
   { label: "주문내역", href: "/orders", icon: ReceiptText },
@@ -48,10 +49,17 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ user }: { user: CurrentUser | null }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  async function handleLogout() {
+    await logoutAction();
+    router.refresh();
+    router.push("/");
+  }
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[300px] shrink-0 flex-col justify-between overflow-y-auto border-r border-line bg-white px-6 py-9 lg:flex">
@@ -72,7 +80,21 @@ export default function Sidebar() {
             <div className="flex flex-col gap-4">
               <p className="px-1 text-sm font-normal text-gray">회원 메뉴</p>
               <div className="flex flex-col">
-                {memberMenu.map((item) => (
+                {user ? (
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 rounded px-3 py-4 text-left text-base font-medium text-navy transition-colors hover:bg-soft"
+                  >
+                    <LogOut size={24} strokeWidth={1.5} className="shrink-0" />
+                    <span>로그아웃</span>
+                  </button>
+                ) : (
+                  <>
+                    <NavLink item={{ label: "로그인", href: "/login", icon: LogIn }} active={isActive("/login")} />
+                    <NavLink item={{ label: "회원가입", href: "/signup", icon: UserPlus }} active={isActive("/signup")} />
+                  </>
+                )}
+                {accountMenu.map((item) => (
                   <NavLink key={item.href} item={item} active={isActive(item.href)} />
                 ))}
               </div>
@@ -93,7 +115,9 @@ export default function Sidebar() {
         <div className="flex flex-col gap-3 pb-2">
           <div className="flex items-center justify-between rounded border border-line px-3 py-4">
             <span className="text-sm font-normal text-gray">보유잔액</span>
-            <span className="text-lg font-medium text-navy">₩0</span>
+            <span className="text-lg font-medium text-navy">
+              ₩{(user?.balance ?? 0).toLocaleString()}
+            </span>
           </div>
           <Link
             href="/charge"

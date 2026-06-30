@@ -16,15 +16,18 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  phone        String?
-  role         Role     @default(USER)
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  username      String   @unique // 로그인 아이디
+  email         String   @unique // 계정 분실 시 확인용
+  passwordHash  String
+  name          String
+  phone         String?
+  signupChannel String? // 가입 경로(구글/네이버/지인 등)
+  balance       Int      @default(0) // 보유잔액(원)
+  role          Role     @default(USER)
+  orders        Order[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("users")
 }

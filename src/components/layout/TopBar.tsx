@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Search, LayoutGrid, Newspaper, Bell } from "lucide-react";
+import type { CurrentUser } from "@/lib/auth";
 
-export default function TopBar() {
+export default function TopBar({ user }: { user: CurrentUser | null }) {
   return (
     <header className="w-full px-4 py-6 sm:px-8">
       <div className="mx-auto flex w-full max-w-[1380px] items-center justify-between gap-4">
@@ -29,12 +31,21 @@ export default function TopBar() {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="h-[38px] w-[38px] rounded-full bg-[#D9D9D9]" />
-            <span className="hidden text-base font-medium text-navy sm:inline">
-              시그널디코드
-            </span>
-          </div>
+          {user ? (
+            <div className="flex items-center gap-1.5">
+              <span className="h-[38px] w-[38px] rounded-full bg-[#D9D9D9]" />
+              <span className="hidden text-base font-medium text-navy sm:inline">
+                {user.name}
+              </span>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="text-base font-medium text-navy hover:underline"
+            >
+              로그인
+            </Link>
+          )}
         </div>
       </div>
     </header>

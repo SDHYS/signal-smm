@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
+import { signupAction } from "@/app/actions/auth";
 
 function RoundCheck({ checked, size = 28 }: { checked: boolean; size?: number }) {
   return (
@@ -142,7 +144,10 @@ function NavButtons({
 const channels = ["구글", "네이버", "아이보스", "지인", "인스타"];
 
 export default function SignupWizard() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // step 1
   const [terms, setTerms] = useState(false);
@@ -169,6 +174,25 @@ export default function SignupWizard() {
     email.trim() !== "" &&
     password.length >= 8 &&
     password === passwordConfirm;
+
+  async function handleSignup() {
+    setError(null);
+    setLoading(true);
+    const res = await signupAction({
+      username: userId,
+      email,
+      password,
+      passwordConfirm,
+      signupChannel: channel,
+    });
+    setLoading(false);
+    if (res.ok) {
+      router.push("/");
+      router.refresh();
+    } else {
+      setError(res.error ?? "회원가입에 실패했습니다.");
+    }
+  }
 
   if (step === 1)
     return (
@@ -293,10 +317,14 @@ export default function SignupWizard() {
             })}
           </div>
         </div>
+        {error && (
+          <p className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
+        )}
         <NavButtons
           onPrev={() => setStep(2)}
-          nextEnabled={channel !== null}
-          nextLabel="다음"
+          onNext={handleSignup}
+          nextEnabled={channel !== null && !loading}
+          nextLabel={loading ? "가입 중..." : "가입하기"}
         />
       </div>
     </Shell>
