@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const topTabs = ["주문내역", "환불내역"];
 
-const statusFilters = [
+const orderFilters = [
   { label: "전체", count: 11 },
   { label: "진행중", count: 0 },
   { label: "완료", count: 0 },
@@ -13,21 +13,32 @@ const statusFilters = [
   { label: "환불", count: 0 },
 ];
 
+const refundFilters = [
+  { label: "전체", count: 11 },
+  { label: "환불", count: 0 },
+  { label: "부분환불", count: 0 },
+];
+
 type Order = { title: string; status: string; no: string; total: string };
 type Group = { date: string; orders: Order[] };
 
-const sample = (n: number): Order[] =>
+const make = (n: number, status: string): Order[] =>
   Array.from({ length: n }, () => ({
     title: "[0원 이벤트] 임시타이틀",
-    status: "결제완료",
+    status,
     no: "#16541616165",
     total: "00,000원",
   }));
 
-const groups: Group[] = [
-  { date: "26.02.22", orders: sample(4) },
-  { date: "26.02.20", orders: sample(5) },
-  { date: "26.02.18", orders: sample(2) },
+const orderGroups: Group[] = [
+  { date: "26.02.22", orders: make(4, "결제완료") },
+  { date: "26.02.20", orders: make(5, "결제완료") },
+  { date: "26.02.18", orders: make(2, "결제완료") },
+];
+
+const refundGroups: Group[] = [
+  { date: "26.02.21", orders: make(4, "환불완료") },
+  { date: "26.02.15", orders: make(2, "환불완료") },
 ];
 
 function Meta({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
@@ -40,13 +51,19 @@ function Meta({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function OrderRow({ order }: { order: Order }) {
+function OrderRow({ order, accentStatus }: { order: Order; accentStatus: boolean }) {
   return (
     <div className="flex flex-col items-start justify-between gap-4 border-b border-line py-7 lg:flex-row lg:items-center">
       <div className="flex flex-col gap-3">
         <p className="text-lg font-medium leading-[26px] text-navy">{order.title}</p>
         <div className="flex flex-wrap items-center gap-x-7 gap-y-2 text-sm">
-          <Meta label="주문상태" value={order.status} accent />
+          <span className="flex items-center gap-2">
+            <span className="font-normal text-gray">주문상태</span>
+            <span className="h-3 w-px bg-line" />
+            <span className={`font-medium ${accentStatus ? "text-orange" : "text-gray"}`}>
+              {order.status}
+            </span>
+          </span>
           <Meta label="주문번호" value={order.no} />
           <Meta label="합계" value={order.total} />
         </div>
@@ -67,6 +84,15 @@ export default function OrderHistory() {
   const [tab, setTab] = useState(0);
   const [filter, setFilter] = useState(0);
 
+  const isRefund = tab === 1;
+  const filters = isRefund ? refundFilters : orderFilters;
+  const groups = isRefund ? refundGroups : orderGroups;
+
+  function selectTab(i: number) {
+    setTab(i);
+    setFilter(0);
+  }
+
   return (
     <div className="flex flex-col gap-12 pt-2">
       {/* 헤더 */}
@@ -74,7 +100,7 @@ export default function OrderHistory() {
         <div className="flex flex-col gap-2.5">
           <p className="text-base font-normal text-[#767676]">임시타이틀</p>
           <h1 className="text-[40px] font-bold leading-[52px] text-black">
-            주문내역
+            {isRefund ? "환불내역" : "주문내역"}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -83,7 +109,7 @@ export default function OrderHistory() {
             return (
               <button
                 key={t}
-                onClick={() => setTab(i)}
+                onClick={() => selectTab(i)}
                 className={`rounded-full px-6 py-3 text-sm font-medium transition ${
                   active ? "bg-blue text-white" : "bg-white text-gray-2 hover:bg-soft"
                 }`}
@@ -98,19 +124,11 @@ export default function OrderHistory() {
       <div className="flex flex-col gap-7">
         {/* 상태 필터 */}
         <div className="flex flex-wrap items-center gap-5">
-          {statusFilters.map((s, i) => {
+          {filters.map((s, i) => {
             const active = i === filter;
             return (
-              <button
-                key={s.label}
-                onClick={() => setFilter(i)}
-                className="flex items-center gap-1.5"
-              >
-                <span
-                  className={`text-sm ${
-                    active ? "font-medium text-orange" : "font-normal text-[#999999]"
-                  }`}
-                >
+              <button key={s.label} onClick={() => setFilter(i)} className="flex items-center gap-1.5">
+                <span className={`text-sm ${active ? "font-medium text-orange" : "font-normal text-[#999999]"}`}>
                   {s.label}
                 </span>
                 <span
@@ -125,7 +143,7 @@ export default function OrderHistory() {
           })}
         </div>
 
-        {/* 날짜별 주문 목록 */}
+        {/* 날짜별 목록 */}
         <div className="flex flex-col gap-15">
           {groups.map((g) => (
             <div key={g.date} className="flex flex-col gap-4">
@@ -135,7 +153,7 @@ export default function OrderHistory() {
               </div>
               <div className="flex flex-col border-t border-navy">
                 {g.orders.map((o, i) => (
-                  <OrderRow key={i} order={o} />
+                  <OrderRow key={i} order={o} accentStatus={!isRefund} />
                 ))}
               </div>
             </div>
