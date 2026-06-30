@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
   LogIn,
@@ -30,12 +33,14 @@ const serviceMenu: NavItem[] = [
   { label: "공지사항", href: "/notice", icon: Megaphone },
 ];
 
-function NavLink({ item }: { item: NavItem }) {
+function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
-      className="flex items-center gap-2 rounded px-3 py-4 text-base font-medium text-navy transition-colors hover:bg-soft"
+      className={`flex items-center gap-2 rounded px-3 py-4 text-base font-medium text-navy transition-colors ${
+        active ? "bg-soft" : "hover:bg-soft"
+      }`}
     >
       <Icon size={24} strokeWidth={1.5} className="shrink-0" />
       <span>{item.label}</span>
@@ -43,11 +48,11 @@ function NavLink({ item }: { item: NavItem }) {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="px-1 text-sm font-normal text-gray">{children}</p>;
-}
-
 export default function Sidebar() {
+  const pathname = usePathname();
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
   return (
     <aside className="sticky top-0 hidden h-screen w-[300px] shrink-0 flex-col justify-between overflow-y-auto border-r border-line bg-white px-6 py-9 lg:flex">
       <div className="flex flex-col gap-15">
@@ -62,28 +67,22 @@ export default function Sidebar() {
 
           {/* 네비게이션 */}
           <nav className="flex flex-col gap-7">
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded bg-soft px-3 py-4 text-base font-medium text-navy"
-            >
-              <Home size={24} strokeWidth={1.5} />
-              <span>메인페이지</span>
-            </Link>
+            <NavLink item={{ label: "메인페이지", href: "/", icon: Home }} active={isActive("/")} />
 
             <div className="flex flex-col gap-4">
-              <SectionLabel>회원 메뉴</SectionLabel>
+              <p className="px-1 text-sm font-normal text-gray">회원 메뉴</p>
               <div className="flex flex-col">
                 {memberMenu.map((item) => (
-                  <NavLink key={item.href} item={item} />
+                  <NavLink key={item.href} item={item} active={isActive(item.href)} />
                 ))}
               </div>
             </div>
 
             <div className="flex flex-col gap-4">
-              <SectionLabel>서비스 안내</SectionLabel>
+              <p className="px-1 text-sm font-normal text-gray">서비스 안내</p>
               <div className="flex flex-col">
                 {serviceMenu.map((item) => (
-                  <NavLink key={item.href} item={item} />
+                  <NavLink key={item.href} item={item} active={isActive(item.href)} />
                 ))}
               </div>
             </div>
