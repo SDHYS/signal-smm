@@ -1,5 +1,5 @@
-import SignupTerms from "@/components/auth/SignupTerms";
+import SignupWizard from "@/components/auth/SignupWizard";
 
 export default function SignupPage() {
-  return <SignupTerms />;
+  return <SignupWizard />;
 }
