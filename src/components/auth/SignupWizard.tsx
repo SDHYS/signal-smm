@@ -105,6 +105,42 @@ function Shell({
   );
 }
 
+function NavButtons({
+  onPrev,
+  onNext,
+  nextEnabled = true,
+  nextLabel = "다음",
+}: {
+  onPrev?: () => void;
+  onNext?: () => void;
+  nextEnabled?: boolean;
+  nextLabel?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      {onPrev && (
+        <button
+          onClick={onPrev}
+          className="flex h-[54px] flex-1 items-center justify-center rounded bg-soft text-base font-medium text-gray transition hover:brightness-95"
+        >
+          이전
+        </button>
+      )}
+      <button
+        onClick={onNext}
+        disabled={!nextEnabled}
+        className={`flex h-[54px] flex-1 items-center justify-center rounded text-base font-medium text-white transition ${
+          nextEnabled ? "bg-black hover:opacity-90" : "cursor-not-allowed bg-muted"
+        }`}
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
+}
+
+const channels = ["구글", "네이버", "아이보스", "지인", "인스타"];
+
 export default function SignupWizard() {
   const [step, setStep] = useState(1);
 
@@ -119,6 +155,9 @@ export default function SignupWizard() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
+  // step 3
+  const [channel, setChannel] = useState<string | null>(null);
+
   function toggleAll() {
     const next = !all;
     setTerms(next);
@@ -131,7 +170,7 @@ export default function SignupWizard() {
     password.length >= 8 &&
     password === passwordConfirm;
 
-  if (step === 1) {
+  if (step === 1)
     return (
       <Shell
         step={1}
@@ -172,69 +211,93 @@ export default function SignupWizard() {
               </span>
             </button>
           </div>
-          <button
-            disabled={!all}
-            onClick={() => setStep(2)}
-            className={`flex h-[54px] w-full items-center justify-center rounded text-base font-medium text-white transition ${
-              all ? "bg-black hover:opacity-90" : "cursor-not-allowed bg-muted"
-            }`}
-          >
-            다음
-          </button>
+          <NavButtons nextEnabled={all} onNext={() => setStep(2)} />
         </div>
       </Shell>
     );
-  }
 
+  if (step === 2)
+    return (
+      <Shell
+        step={2}
+        title={
+          <>
+            계정 정보를
+            <br />
+            입력해주세요
+          </>
+        }
+        subtitle="서비스 이용에 필요한 기본 정보입니다."
+      >
+        <div className="flex w-full flex-col gap-8">
+          <div className="flex w-full flex-col gap-5">
+            <Field label="아이디" placeholder="가입 진행 아이디" value={userId} onChange={setUserId} />
+            <Field label="이메일" type="email" placeholder="계정 분실 시 확인용 이메일" value={email} onChange={setEmail} />
+            <Field
+              label="비밀번호"
+              type="password"
+              placeholder="8자 이상 입력"
+              value={password}
+              onChange={setPassword}
+              hint="8자 이상 입력해주세요"
+            />
+            <Field
+              label="비밀번호 확인"
+              type="password"
+              placeholder="비밀번호 재확인"
+              value={passwordConfirm}
+              onChange={setPasswordConfirm}
+            />
+          </div>
+          <NavButtons
+            onPrev={() => setStep(1)}
+            onNext={() => setStep(3)}
+            nextEnabled={step2Valid}
+          />
+        </div>
+      </Shell>
+    );
+
+  // step 3 — 추가 정보(가입 경로)
   return (
     <Shell
-      step={2}
+      step={3}
       title={
         <>
-          계정 정보를
+          추가 정보를
           <br />
-          입력해주세요
+          알려 주세요
         </>
       }
       subtitle="서비스 이용에 필요한 기본 정보입니다."
     >
       <div className="flex w-full flex-col gap-8">
-        <div className="flex w-full flex-col gap-5">
-          <Field label="아이디" placeholder="가입 진행 아이디" value={userId} onChange={setUserId} />
-          <Field label="이메일" type="email" placeholder="계정 분실 시 확인용 이메일" value={email} onChange={setEmail} />
-          <Field
-            label="비밀번호"
-            type="password"
-            placeholder="8자 이상 입력"
-            value={password}
-            onChange={setPassword}
-            hint="8자 이상 입력해주세요"
-          />
-          <Field
-            label="비밀번호 확인"
-            type="password"
-            placeholder="비밀번호 재확인"
-            value={passwordConfirm}
-            onChange={setPasswordConfirm}
-          />
+        <div className="flex w-full flex-col gap-2">
+          <span className="text-sm font-medium text-[#222222]">가입 경로</span>
+          <div className="flex flex-wrap items-center gap-3">
+            {channels.map((c) => {
+              const active = c === channel;
+              return (
+                <button
+                  key={c}
+                  onClick={() => setChannel(c)}
+                  className={`rounded px-7 py-4 text-sm font-normal transition ${
+                    active
+                      ? "bg-blue text-white outline outline-1 outline-blue"
+                      : "text-gray outline outline-1 outline-line hover:outline-gray-2"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setStep(1)}
-            className="flex h-[54px] flex-1 items-center justify-center rounded bg-soft text-base font-medium text-gray transition hover:brightness-95"
-          >
-            이전
-          </button>
-          <button
-            disabled={!step2Valid}
-            className={`flex h-[54px] flex-1 items-center justify-center rounded text-base font-medium text-white transition ${
-              step2Valid ? "bg-black hover:opacity-90" : "cursor-not-allowed bg-muted"
-            }`}
-          >
-            다음
-          </button>
-        </div>
+        <NavButtons
+          onPrev={() => setStep(2)}
+          nextEnabled={channel !== null}
+          nextLabel="다음"
+        />
       </div>
     </Shell>
   );
