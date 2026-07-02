@@ -11,6 +11,7 @@ export async function createBlogPost(input: {
   title: string;
   content: string;
   tags?: string[];
+  thumbnailUrl?: string;
 }): Promise<Result> {
   const admin = await getCurrentUser();
   if (!admin || admin.role !== "ADMIN")
@@ -24,6 +25,7 @@ export async function createBlogPost(input: {
       title: input.title.trim(),
       content: input.content.trim(),
       tags: input.tags ?? [],
+      thumbnailUrl: input.thumbnailUrl?.trim() || null,
       authorName: admin.name,
     },
     select: { id: true },

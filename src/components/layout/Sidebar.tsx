@@ -49,7 +49,13 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-export default function Sidebar({ user }: { user: CurrentUser | null }) {
+export default function Sidebar({
+  user,
+  siteName,
+}: {
+  user: CurrentUser | null;
+  siteName: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const isActive = (href: string) =>
@@ -69,7 +75,7 @@ export default function Sidebar({ user }: { user: CurrentUser | null }) {
           <Link href="/" className="flex items-center gap-1">
             <span className="h-[30px] w-[28px] rounded bg-gradient-to-br from-[#91A0FF] via-[#6B80FF] to-[#606DBC]" />
             <span className="text-2xl font-bold tracking-tight text-[#91A0FF]">
-              LOGONAME
+              {siteName}
             </span>
           </Link>
 

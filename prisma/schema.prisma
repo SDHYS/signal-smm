@@ -50,6 +50,7 @@ model ChargeRequest {
   total         Int // 입금해야 할 총액(amount + vat)
   depositorName String // 입금자명
   receiptType   String       @default("신청안함") // 신청안함/세금계산서/현금영수증
+  receiptDetail String?      @db.Text // 영수증 상세(JSON: 회사정보 또는 휴대폰번호)
   status        ChargeStatus @default(PENDING)
   confirmedById String? // 입금확인 처리한 관리자
   confirmedAt   DateTime?

@@ -12,6 +12,7 @@ export async function createChargeRequest(input: {
   amount: number;
   depositorName: string;
   receiptType?: string;
+  receiptDetail?: Record<string, string>;
 }): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
@@ -26,6 +27,13 @@ export async function createChargeRequest(input: {
   const vat = Math.round(amount * VAT_RATE);
   const total = amount + vat;
 
+  // 영수증 상세: 빈 값 제거 후 저장
+  const detailEntries = Object.entries(input.receiptDetail ?? {}).filter(
+    ([, v]) => v?.trim(),
+  );
+  const receiptDetail =
+    detailEntries.length > 0 ? JSON.stringify(Object.fromEntries(detailEntries)) : null;
+
   const cr = await prisma.chargeRequest.create({
     data: {
       userId: user.id,
@@ -34,6 +42,7 @@ export async function createChargeRequest(input: {
       total,
       depositorName,
       receiptType: input.receiptType || "신청안함",
+      receiptDetail,
     },
     select: { id: true },
   });

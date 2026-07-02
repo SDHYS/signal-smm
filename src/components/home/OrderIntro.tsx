@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Megaphone } from "lucide-react";
 import { FaTelegramPlane } from "react-icons/fa";
 
-export default function OrderIntro() {
+export default function OrderIntro({ ticker }: { ticker?: string | null }) {
   return (
     <section className="flex flex-col gap-7">
       <div className="flex items-end justify-between gap-4">
@@ -43,7 +43,7 @@ export default function OrderIntro() {
         <div className="flex items-center gap-2 rounded-md bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] p-4">
           <FaTelegramPlane className="shrink-0 text-xl text-white" />
           <p className="truncate text-sm font-medium text-white">
-            [1시간 25분 전] qj_cb*** 님이 트위터 댓글 300개를 주문했어요!
+            {ticker ?? "지금 바로 첫 주문을 시작해보세요!"}
           </p>
         </div>
       </div>

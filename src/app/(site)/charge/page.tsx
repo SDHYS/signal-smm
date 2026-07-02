@@ -26,6 +26,7 @@ export default async function Charge() {
   return (
     <ChargePage
       isLoggedIn={!!user}
+      balance={user?.balance ?? 0}
       bank={bank}
       history={history.map((h) => ({
         id: h.id,

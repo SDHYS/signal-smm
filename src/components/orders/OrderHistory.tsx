@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 const topTabs = ["주문내역", "환불내역"];
@@ -73,10 +73,30 @@ export default function OrderHistory({
   refundTotal: number;
 }) {
   const [tab, setTab] = useState(0);
+  const [filter, setFilter] = useState("전체");
 
   const isRefund = tab === 1;
   const groups = isRefund ? refundGroups : orderGroups;
   const total = isRefund ? refundTotal : orderTotal;
+
+  // 상태별 카운트 (현재 탭 기준)
+  const statusChips = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const g of groups)
+      for (const o of g.orders) counts.set(o.status, (counts.get(o.status) ?? 0) + 1);
+    return [
+      { label: "전체", count: total },
+      ...[...counts.entries()].map(([label, count]) => ({ label, count })),
+    ];
+  }, [groups, total]);
+
+  // 필터 적용 (빈 날짜 그룹 제거)
+  const shownGroups = useMemo(() => {
+    if (filter === "전체") return groups;
+    return groups
+      .map((g) => ({ ...g, orders: g.orders.filter((o) => o.status === filter) }))
+      .filter((g) => g.orders.length > 0);
+  }, [groups, filter]);
 
   return (
     <div className="flex flex-col gap-12 pt-2">
@@ -94,7 +114,10 @@ export default function OrderHistory({
             return (
               <button
                 key={t}
-                onClick={() => setTab(i)}
+                onClick={() => {
+                  setTab(i);
+                  setFilter("전체");
+                }}
                 className={`rounded-full px-6 py-3 text-sm font-medium transition ${
                   active ? "bg-blue text-white" : "bg-white text-gray-2 hover:bg-soft"
                 }`}
@@ -107,10 +130,34 @@ export default function OrderHistory({
       </div>
 
       <div className="flex flex-col gap-7">
-        <p className="flex items-center gap-1 text-lg">
-          <span className="font-normal text-gray">전체</span>
-          <span className="font-medium text-orange">{total}</span>
-        </p>
+        {/* 상태 필터 칩 */}
+        <div className="flex flex-wrap items-center gap-5">
+          {statusChips.map((s) => {
+            const active = s.label === filter;
+            return (
+              <button
+                key={s.label}
+                onClick={() => setFilter(s.label)}
+                className="flex items-center gap-1.5"
+              >
+                <span
+                  className={`text-sm ${
+                    active ? "font-medium text-orange" : "font-normal text-[#999999]"
+                  }`}
+                >
+                  {s.label}
+                </span>
+                <span
+                  className={`rounded-full px-3 text-sm font-medium ${
+                    active ? "bg-orange text-white" : "bg-[#F4F4F4] text-[#999999]"
+                  }`}
+                >
+                  {s.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         {!isLoggedIn ? (
           <div className="flex items-center justify-between gap-4 rounded-xl bg-soft px-6 py-5">
@@ -121,13 +168,13 @@ export default function OrderHistory({
               로그인
             </Link>
           </div>
-        ) : groups.length === 0 ? (
+        ) : shownGroups.length === 0 ? (
           <p className="rounded-xl bg-soft p-8 text-base text-gray">
             {isRefund ? "환불 내역이 없습니다." : "주문 내역이 없습니다."}
           </p>
         ) : (
           <div className="flex flex-col gap-15">
-            {groups.map((g) => (
+            {shownGroups.map((g) => (
               <div key={g.date} className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-normal leading-[30px] text-gray">주문날짜</span>

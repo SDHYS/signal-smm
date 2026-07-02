@@ -17,7 +17,7 @@ export default function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await loginAction({ username: userId, password });
+    const res = await loginAction({ username: userId, password, keepLogin });
     setLoading(false);
     if (res.ok) {
       router.push("/");

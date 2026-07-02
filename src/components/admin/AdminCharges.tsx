@@ -10,10 +10,22 @@ export type PendingCharge = {
   total: number;
   depositorName: string;
   receiptType: string;
+  receiptDetail: string | null;
   username: string;
   name: string;
   createdAt: string;
 };
+
+function formatDetail(json: string | null): string | null {
+  if (!json) return null;
+  try {
+    return Object.entries(JSON.parse(json) as Record<string, string>)
+      .map(([k, v]) => `${k} ${v}`)
+      .join(" · ");
+  } catch {
+    return null;
+  }
+}
 
 const won = (n: number) => `${n.toLocaleString()}원`;
 
@@ -61,6 +73,9 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
               <span className="text-gray">
                 {c.receiptType} · {new Date(c.createdAt).toLocaleString("ko-KR")}
               </span>
+              {formatDetail(c.receiptDetail) && (
+                <span className="text-xs text-gray">{formatDetail(c.receiptDetail)}</span>
+              )}
             </div>
             <div className="w-[120px] text-right font-medium text-navy">{won(c.amount)}</div>
             <div className="w-[140px] text-right font-semibold text-orange">{won(c.total)}</div>

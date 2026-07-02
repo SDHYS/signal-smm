@@ -67,10 +67,12 @@ function LabeledInput({
 
 export default function ChargePage({
   isLoggedIn,
+  balance,
   bank,
   history,
 }: {
   isLoggedIn: boolean;
+  balance: number;
   bank: Bank;
   history: History[];
 }) {
@@ -108,11 +110,26 @@ export default function ChargePage({
       setError("입금자명을 작성해주세요.");
       return;
     }
+    // 영수증 상세 수집
+    const receiptDetail: Record<string, string> | undefined =
+      receipt === 1
+        ? {
+            회사명: companyName,
+            사업자등록번호: bizNo,
+            대표자: ceo,
+            담당자연락처: managerPhone,
+            이메일: taxEmail,
+          }
+        : receipt === 2
+          ? { 휴대폰번호: cashReceiptNo }
+          : undefined;
+
     setLoading(true);
     const res = await createChargeRequest({
       amount,
       depositorName: depositor,
       receiptType: receiptOptions[receipt],
+      receiptDetail,
     });
     setLoading(false);
     if (res.ok) {
@@ -171,11 +188,15 @@ export default function ChargePage({
             <div className="flex flex-col gap-4">
               <div className="flex items-end justify-between rounded-[10px] bg-soft p-10">
                 <div className="flex flex-col gap-4">
-                  <span className="text-lg font-normal leading-[26px] text-gray">충전 금액</span>
+                  <span className="text-lg font-normal leading-[26px] text-gray">충전후 잔액</span>
                   <div className="flex items-end gap-2">
-                    <span className="text-[26px] font-semibold leading-7 text-navy">{won(amount)}</span>
+                    <span className="text-[26px] font-semibold leading-7 text-navy">
+                      {won(balance + amount)}
+                    </span>
                     {amount > 0 && (
-                      <span className="text-base font-normal text-[#04B014]">+ VAT {won(vat)}</span>
+                      <span className="text-base font-normal text-[#04B014]">
+                        +{amount.toLocaleString()}원 충전
+                      </span>
                     )}
                   </div>
                 </div>

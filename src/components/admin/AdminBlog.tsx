@@ -14,6 +14,7 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,12 +26,14 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
       title,
       content,
       tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      thumbnailUrl,
     });
     setSaving(false);
     if (res.ok) {
       setTitle("");
       setContent("");
       setTags("");
+      setThumbnailUrl("");
       router.refresh();
     } else setError(res.error ?? "등록 실패");
   }
@@ -75,6 +78,12 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="태그 (쉼표로 구분, 예: 유튜브, 조회수)"
+          className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
+        />
+        <input
+          value={thumbnailUrl}
+          onChange={(e) => setThumbnailUrl(e.target.value)}
+          placeholder="썸네일 이미지 URL (선택)"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <div className="flex items-center gap-3">

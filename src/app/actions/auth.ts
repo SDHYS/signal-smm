@@ -60,6 +60,7 @@ export async function signupAction(input: SignupInput): Promise<ActionResult> {
 export async function loginAction(input: {
   username: string;
   password: string;
+  keepLogin?: boolean;
 }): Promise<ActionResult> {
   const username = input.username?.trim() ?? "";
   if (!username || !input.password)
@@ -74,7 +75,7 @@ export async function loginAction(input: {
   if (!user || !valid)
     return { ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
 
-  await createSession(user.id);
+  await createSession(user.id, input.keepLogin ?? false);
   return { ok: true };
 }
 

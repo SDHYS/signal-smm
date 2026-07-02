@@ -11,7 +11,7 @@ function secretKey() {
   return new TextEncoder().encode(secret);
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, persistent = true) {
   const token = await new SignJWT({ userId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -24,7 +24,8 @@ export async function createSession(userId: string) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE,
+    // 로그인 상태 유지 시 7일, 아니면 브라우저 종료 시 만료(세션 쿠키)
+    ...(persistent ? { maxAge: MAX_AGE } : {}),
   });
 }
 

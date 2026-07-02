@@ -17,6 +17,7 @@ export default async function AdminPage() {
     total: c.total,
     depositorName: c.depositorName,
     receiptType: c.receiptType,
+    receiptDetail: c.receiptDetail,
     username: c.user.username,
     name: c.user.name,
     createdAt: c.createdAt.toISOString(),
