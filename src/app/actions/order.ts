@@ -50,7 +50,8 @@ export async function createOrder(input: {
   if (!targetUrl) return { ok: false, error: "주문 링크를 입력해주세요." };
 
   const total = product.unitPrice * qty;
-  const orderNo = `${Date.now()}${Math.floor(Math.random() * 90 + 10)}`;
+  // 같은 밀리초에 동시 주문이 몰려도 충돌하지 않도록 난수 폭 확보
+  const orderNo = `${Date.now()}${Math.floor(Math.random() * 900000 + 100000)}`;
 
   try {
     await prisma.$transaction(async (tx) => {
