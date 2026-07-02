@@ -7,6 +7,7 @@ const items = [
   { label: "입금확인", href: "/admin" },
   { label: "주문관리", href: "/admin/orders" },
   { label: "상품관리", href: "/admin/products" },
+  { label: "회원관리", href: "/admin/members" },
   { label: "공지사항", href: "/admin/notices" },
   { label: "블로그", href: "/admin/blog" },
   { label: "1:1 문의", href: "/admin/inquiries" },

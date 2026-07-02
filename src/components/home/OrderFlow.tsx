@@ -7,6 +7,9 @@ import { ChevronRight, Star, UserPlus, X } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 import { platforms } from "./platforms";
 import { createOrder } from "@/app/actions/order";
+import { toggleFavorite } from "@/app/actions/favorite";
+
+const FAV_IDX = platforms.findIndex((p) => p.name === "즐겨찾기");
 
 export type OrderProduct = {
   id: string;
@@ -44,14 +47,17 @@ export default function OrderFlow({
   balance,
   products,
   query,
+  favoriteIds,
 }: {
   isLoggedIn: boolean;
   balance: number;
   products: OrderProduct[];
   query?: string;
+  favoriteIds: string[];
 }) {
   const router = useRouter();
   const [platformIdx, setPlatformIdx] = useState(-1);
+  const [favs, setFavs] = useState<Set<string>>(() => new Set(favoriteIds));
   const [categoryIdx, setCategoryIdx] = useState(0);
   const [serviceId, setServiceId] = useState<string>("");
   const [detailTab, setDetailTab] = useState(0);
@@ -69,14 +75,40 @@ export default function OrderFlow({
       const q = query.trim();
       list = list.filter((p) => p.name.includes(q) || p.category.includes(q));
     }
-    if (selectedPlatform && !META_TILES.has(selectedPlatform.name)) {
+    if (selectedPlatform?.name === "즐겨찾기") {
+      list = list.filter((p) => favs.has(p.id));
+    } else if (selectedPlatform && !META_TILES.has(selectedPlatform.name)) {
       list = list.filter((p) => p.category === selectedPlatform.name);
     }
     if (categoryIdx === 1) list = list.filter((p) => p.name.includes("팔로워"));
     if (categoryIdx === 2)
       list = list.filter((p) => /연령|성별/.test(p.name));
     return list;
-  }, [products, query, selectedPlatform, categoryIdx]);
+  }, [products, query, selectedPlatform, categoryIdx, favs]);
+
+  async function handleToggleFav(productId: string) {
+    if (!isLoggedIn) {
+      alert("로그인 후 즐겨찾기를 사용할 수 있습니다.");
+      return;
+    }
+    // 낙관적 업데이트 후 서버 반영
+    setFavs((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+    const res = await toggleFavorite(productId);
+    if (!res.ok) {
+      setFavs((prev) => {
+        const next = new Set(prev);
+        if (next.has(productId)) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+      alert(res.error ?? "즐겨찾기 처리에 실패했습니다.");
+    }
+  }
 
   // 선택 상품: 목록에서 사라지면 자동으로 첫 상품으로 폴백
   const product = useMemo(
@@ -193,10 +225,21 @@ export default function OrderFlow({
               )}
             </div>
             <button
-              onClick={() => alert("즐겨찾기 기능은 준비 중입니다.")}
-              className="flex items-center gap-1 rounded bg-soft px-4 py-3 text-sm font-medium text-gray transition hover:text-navy"
+              onClick={() => {
+                setPlatformIdx(platformIdx === FAV_IDX ? -1 : FAV_IDX);
+                setServiceId("");
+              }}
+              className={`flex items-center gap-1 rounded px-4 py-3 text-sm font-medium transition ${
+                platformIdx === FAV_IDX
+                  ? "bg-[#FFC833]/20 text-navy"
+                  : "bg-soft text-gray hover:text-navy"
+              }`}
             >
-              <Star size={18} strokeWidth={1.5} />
+              <Star
+                size={18}
+                strokeWidth={1.5}
+                className={platformIdx === FAV_IDX ? "fill-[#FFC833] text-[#FFC833]" : ""}
+              />
               즐겨찾기
             </button>
           </div>
@@ -232,22 +275,41 @@ export default function OrderFlow({
           <div className="thin-scrollbar max-h-[420px] overflow-y-auto pr-2">
             {filtered.length === 0 && (
               <p className="py-6 text-base text-gray">
-                {selectedPlatform && !META_TILES.has(selectedPlatform.name)
-                  ? `${selectedPlatform.name} 상품은 준비 중입니다. 다른 플랫폼을 선택해주세요.`
-                  : "조건에 맞는 상품이 없습니다."}
+                {selectedPlatform?.name === "즐겨찾기"
+                  ? "즐겨찾기한 상품이 없습니다. 상품 옆 별 아이콘으로 추가해보세요."
+                  : selectedPlatform && !META_TILES.has(selectedPlatform.name)
+                    ? `${selectedPlatform.name} 상품은 준비 중입니다. 다른 플랫폼을 선택해주세요.`
+                    : "조건에 맞는 상품이 없습니다."}
               </p>
             )}
             {filtered.map((p) => {
               const active = p.id === product?.id;
+              const isFav = favs.has(p.id);
               return (
-                <button
+                <div
                   key={p.id}
                   onClick={() => setServiceId(p.id)}
-                  className="flex w-full items-center justify-between gap-4 border-b border-line/70 py-6 text-left last:border-0"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-line/70 py-6 text-left last:border-0"
                 >
-                  <div className="flex flex-col gap-2">
-                    <span className="text-lg font-medium text-navy">{p.name}</span>
-                    <span className="text-sm font-normal text-gray">{p.category}</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      aria-label={isFav ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFav(p.id);
+                      }}
+                      className="shrink-0 transition hover:scale-110"
+                    >
+                      <Star
+                        size={22}
+                        strokeWidth={1.5}
+                        className={isFav ? "fill-[#FFC833] text-[#FFC833]" : "text-muted"}
+                      />
+                    </button>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-lg font-medium text-navy">{p.name}</span>
+                      <span className="text-sm font-normal text-gray">{p.category}</span>
+                    </div>
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-8 py-3 text-base font-medium transition ${
@@ -256,7 +318,7 @@ export default function OrderFlow({
                   >
                     {p.unitPrice.toLocaleString()}원
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>

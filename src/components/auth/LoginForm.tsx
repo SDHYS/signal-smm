@@ -80,12 +80,11 @@ export default function LoginForm() {
                   로그인 상태 유지
                 </label>
                 <div className="flex items-center gap-2 text-sm text-navy">
-                  {/* 계정 찾기는 고객센터 채널로 안내 */}
-                  <Link href="/support" className="hover:underline">
+                  <Link href="/find-id" className="hover:underline">
                     아이디찾기
                   </Link>
                   <span className="h-3 w-px bg-line" />
-                  <Link href="/support" className="hover:underline">
+                  <Link href="/find-id" className="hover:underline">
                     비밀번호 찾기
                   </Link>
                 </div>

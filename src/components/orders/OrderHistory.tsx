@@ -42,18 +42,18 @@ function Row({ order, accentStatus }: { order: OrderItem; accentStatus: boolean 
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <button
-          onClick={() => alert("영수증 발급 기능은 준비 중입니다.")}
+        <Link
+          href={`/orders/receipt/${order.id}`}
           className="rounded border border-line px-6 py-3 text-sm font-medium text-navy transition hover:bg-soft/50"
         >
           영수증
-        </button>
-        <button
-          onClick={() => alert("거래명세서 발급 기능은 준비 중입니다.")}
+        </Link>
+        <Link
+          href={`/orders/receipt/${order.id}?type=statement`}
           className="rounded bg-soft px-6 py-3 text-sm font-medium text-gray transition hover:brightness-95"
         >
           거래명세서
-        </button>
+        </Link>
       </div>
     </div>
   );

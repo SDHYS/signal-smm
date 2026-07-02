@@ -23,6 +23,7 @@ const quickMenu = [
   { label: "주문하기", href: "/" },
   { label: "잔액충전", href: "/charge" },
   { label: "주문내역", href: "/orders" },
+  { label: "마이페이지", href: "/mypage" },
   { label: "서비스 안내", href: "/guide" },
   { label: "1:1 문의", href: "/inquiry" },
   { label: "회사 소개", href: "/about" },
@@ -200,7 +201,7 @@ export default function TopBar({
           </div>
 
           {user ? (
-            <Link href="/orders" className="flex items-center gap-1.5 transition-opacity hover:opacity-80">
+            <Link href="/mypage" className="flex items-center gap-1.5 transition-opacity hover:opacity-80">
               <span className="h-[38px] w-[38px] rounded-full bg-[#D9D9D9]" />
               <span className="hidden text-base font-medium text-navy sm:inline">
                 {user.name}

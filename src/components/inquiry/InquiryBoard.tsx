@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 export type InquiryRow = {
   id: string;
@@ -23,9 +24,11 @@ function StatusPill({ answered }: { answered: boolean }) {
 export default function InquiryBoard({
   isLoggedIn,
   inquiries,
+  q,
 }: {
   isLoggedIn: boolean;
   inquiries: InquiryRow[];
+  q?: string;
 }) {
   return (
     <div className="flex flex-col gap-8 pt-2">
@@ -35,7 +38,18 @@ export default function InquiryBoard({
       </div>
 
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <form method="GET" className="flex w-[380px] max-w-full items-center justify-between rounded-lg px-4 py-4 outline outline-1 outline-line/80">
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="검색어를 입력해주세요"
+              className="w-full bg-transparent text-base font-normal text-navy placeholder:text-gray focus:outline-none"
+            />
+            <button type="submit" aria-label="검색">
+              <Search size={20} strokeWidth={1.5} className="shrink-0 text-muted" />
+            </button>
+          </form>
           <Link
             href="/inquiry/write"
             className="rounded-lg bg-orange px-10 py-5 text-base font-medium text-white transition hover:brightness-95"
@@ -43,6 +57,14 @@ export default function InquiryBoard({
             글쓰기
           </Link>
         </div>
+        {q?.trim() && (
+          <p className="-mt-3 text-sm text-gray">
+            &quot;{q}&quot; 검색 결과 {inquiries.length}건 ·{" "}
+            <Link href="/inquiry" className="text-navy underline">
+              전체 보기
+            </Link>
+          </p>
+        )}
 
         {!isLoggedIn ? (
           <div className="flex items-center justify-between gap-4 rounded-xl bg-soft px-6 py-5">

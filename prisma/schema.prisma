@@ -29,6 +29,7 @@ model User {
   charges       ChargeRequest[]
   inquiries     Inquiry[]
   notifications Notification[]
+  favorites     Favorite[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -75,6 +76,7 @@ model Product {
   isActive    Boolean     @default(true)
   sortOrder   Int         @default(0)
   orderItems  OrderItem[]
+  favorites   Favorite[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -213,4 +215,18 @@ model Notification {
   @@index([userId, read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ── 즐겨찾기(회원별 상품) ─────────────────────────────
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("favorites")
 }

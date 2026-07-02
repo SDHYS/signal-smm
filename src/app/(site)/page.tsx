@@ -50,6 +50,13 @@ export default async function Home({
     prisma.setting.findUnique({ where: { key: "site_name" } }),
   ]);
 
+  const favorites = user
+    ? await prisma.favorite.findMany({
+        where: { userId: user.id },
+        select: { productId: true },
+      })
+    : [];
+
   const ticker = latestOrder
     ? `[${timeAgo(latestOrder.createdAt)}] ${mask(latestOrder.user.username)} 님이 ${
         latestOrder.items[0]?.productName ?? "서비스"
@@ -65,6 +72,7 @@ export default async function Home({
         balance={user?.balance ?? 0}
         products={products}
         query={q}
+        favoriteIds={favorites.map((f) => f.productId)}
       />
     </div>
   );

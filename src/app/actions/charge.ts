@@ -52,6 +52,23 @@ export async function createChargeRequest(input: {
   return { ok: true, id: cr.id };
 }
 
+// ── 사용자: 본인 입금대기 신청 취소 ───────────────────
+export async function cancelMyCharge(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "로그인이 필요합니다." };
+
+  const updated = await prisma.chargeRequest.updateMany({
+    where: { id, userId: user.id, status: "PENDING" },
+    data: { status: "CANCELLED" },
+  });
+  if (updated.count === 0)
+    return { ok: false, error: "취소할 수 없는 신청입니다." };
+
+  revalidatePath("/charge");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
 // ── 관리자: 입금 확인 → 잔액 반영 ─────────────────────
 export async function confirmCharge(id: string): Promise<ActionResult> {
   const admin = await getCurrentUser();

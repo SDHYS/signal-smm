@@ -1,13 +1,16 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 export type NoticeRow = { id: string; title: string; date: string };
 
 export default function NoticeBoard({
   notices,
   total,
+  q,
 }: {
   notices: NoticeRow[];
   total: number;
+  q?: string;
 }) {
   return (
     <div className="flex flex-col gap-8 pt-2">
@@ -19,10 +22,31 @@ export default function NoticeBoard({
       </div>
 
       <div className="flex flex-col gap-4">
-        <p className="flex items-center gap-1 text-lg">
-          <span className="font-normal text-gray">Total</span>
-          <span className="font-medium text-orange">{total}</span>
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <p className="flex items-center gap-1 text-lg">
+            <span className="font-normal text-gray">Total</span>
+            <span className="font-medium text-orange">{total}</span>
+          </p>
+          <form method="GET" className="flex w-[380px] max-w-full items-center justify-between rounded-lg px-4 py-4 outline outline-1 outline-line/80">
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="검색어를 입력해주세요"
+              className="w-full bg-transparent text-base font-normal text-navy placeholder:text-gray focus:outline-none"
+            />
+            <button type="submit" aria-label="검색">
+              <Search size={20} strokeWidth={1.5} className="shrink-0 text-muted" />
+            </button>
+          </form>
+        </div>
+        {q?.trim() && (
+          <p className="text-sm text-gray">
+            &quot;{q}&quot; 검색 결과 {notices.length}건 ·{" "}
+            <Link href="/notice" className="text-navy underline">
+              전체 보기
+            </Link>
+          </p>
+        )}
 
         <div className="overflow-x-auto">
           <div className="min-w-[760px] border-t border-navy">

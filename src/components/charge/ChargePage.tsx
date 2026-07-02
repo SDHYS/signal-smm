@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createChargeRequest } from "@/app/actions/charge";
+import { createChargeRequest, cancelMyCharge } from "@/app/actions/charge";
 
 type Bank = { bankName: string; account: string; holder: string };
 type ChargeStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
@@ -367,9 +367,24 @@ export default function ChargePage({
                           {new Date(h.createdAt).toLocaleDateString("ko-KR")}
                         </span>
                       </div>
-                      <span className={`rounded-full px-4 py-2 text-sm font-medium ${m.cls}`}>
-                        {m.label}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {h.status === "PENDING" && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm("충전 신청을 취소할까요?")) return;
+                              const res = await cancelMyCharge(h.id);
+                              if (!res.ok) alert(res.error);
+                              router.refresh();
+                            }}
+                            className="rounded border border-line px-3 py-2 text-xs font-medium text-gray transition hover:bg-soft"
+                          >
+                            신청 취소
+                          </button>
+                        )}
+                        <span className={`rounded-full px-4 py-2 text-sm font-medium ${m.cls}`}>
+                          {m.label}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}

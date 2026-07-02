@@ -32,6 +32,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 인쇄 시 문서 외 요소 숨김 (영수증/거래명세서) */
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+}
+
 /* 얇은 스크롤바 (서비스 목록 등) */
 .thin-scrollbar::-webkit-scrollbar {
   width: 6px;
