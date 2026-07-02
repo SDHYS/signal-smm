@@ -2,42 +2,62 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { SiInstagram } from "react-icons/si";
+import { SiInstagram, SiYoutube, SiFacebook, SiTiktok } from "react-icons/si";
+
+const platformIcons: Record<string, React.ReactNode> = {
+  인스타그램: <SiInstagram className="text-6xl text-white/90" />,
+  유튜브: <SiYoutube className="text-6xl text-white/90" />,
+  페이스북: <SiFacebook className="text-6xl text-white/90" />,
+  틱톡: <SiTiktok className="text-6xl text-white/90" />,
+};
 
 const platformTabs = ["인스타그램", "유튜브", "페이스북", "틱톡"];
+// 탭별 지표 용어 (팔로워/좋아요에 해당하는 각 플랫폼 용어)
+const terms: Record<string, { f: string; l: string; feed: string }> = {
+  인스타그램: { f: "팔로워", l: "좋아요", feed: "피드와 탐색 탭" },
+  유튜브: { f: "구독자", l: "조회수", feed: "홈 피드와 추천 영상" },
+  페이스북: { f: "팔로워", l: "좋아요", feed: "뉴스피드" },
+  틱톡: { f: "팔로워", l: "조회수", feed: "For You 피드" },
+};
 
-const serviceCards = [
-  {
-    title: "인스타 팔로워",
-    desc: "한국인 실사용자가 자연스럽게 늘어납니다. 성별·연령 타겟팅은 물론, 90일간 A/S 리필까지 확실히 보장합니다.",
-  },
-  {
-    title: "인스타 좋아요",
-    desc: "게시물 노출과 도달률을 한 번에! 최저 0.5원부터 시작하는 좋아요 서비스와 편리한 자동 좋아요 옵션까지 만나보세요.",
-  },
-  {
-    title: "인스타 인기게시물",
-    desc: "인기 게시물 상위 노출로 해시태그 검색 최상단을 점유하세요. 좋아요, 도달, 인사이트를 종합 부스팅하여 자연 유입을 극대화",
-  },
-];
+function buildCards(p: string) {
+  const t = terms[p];
+  return [
+    {
+      title: `${p} ${t.f}`,
+      desc: `한국인 실사용자 ${t.f}가 자연스럽게 늘어납니다. 성별·연령 타겟팅은 물론, 90일간 A/S 리필까지 확실히 보장합니다.`,
+    },
+    {
+      title: `${p} ${t.l}`,
+      desc: `게시물 노출과 도달률을 한 번에! 부담 없는 가격으로 시작하는 ${t.l} 서비스와 편리한 자동 옵션까지 만나보세요.`,
+    },
+    {
+      title: `${p} 인기게시물`,
+      desc: `인기 게시물 상위 노출로 검색 최상단을 점유하세요. ${t.l}, 도달, 인사이트를 종합 부스팅하여 자연 유입을 극대화합니다.`,
+    },
+  ];
+}
 
-const effects = [
-  {
-    label: "상품효과 01",
-    title: "인스타 팔로워 구매 효과",
-    desc: "인스타 팔로워 구매는 계정의 첫인상을 결정합니다. 팔로워 수가 많은 계정은 신규 방문자에게 신뢰감을 주고, 인스타그램 알고리즘이 콘텐츠를 더 넓은 범위에 노출시키는 계기가 됩니다.",
-  },
-  {
-    label: "상품효과 02",
-    title: "인스타 좋아요 구매 효과",
-    desc: "인스타 좋아요는 게시물의 품질 신호입니다. 좋아요가 많은 게시물은 알고리즘에 의해 더 많은 사용자의 피드와 탐색 탭에 노출되어 자연 도달률이 크게 향상됩니다.",
-  },
-  {
-    label: "상품효과 03",
-    title: "인스타그램 비즈니스 성장 효과",
-    desc: "팔로워와 좋아요의 시너지 효과로 인스타그램 계정이 종합적으로 성장합니다. 브랜드 인지도, 매출, 협업 기회까지 비즈니스 전반의 성과를 끌어올릴 수 있습니다.",
-  },
-];
+function buildEffects(p: string) {
+  const t = terms[p];
+  return [
+    {
+      label: "상품효과 01",
+      title: `${p} ${t.f} 구매 효과`,
+      desc: `${p} ${t.f} 구매는 계정의 첫인상을 결정합니다. ${t.f} 수가 많은 계정은 신규 방문자에게 신뢰감을 주고, ${p} 알고리즘이 콘텐츠를 더 넓은 범위에 노출시키는 계기가 됩니다.`,
+    },
+    {
+      label: "상품효과 02",
+      title: `${p} ${t.l} 구매 효과`,
+      desc: `${t.l}는 게시물의 품질 신호입니다. ${t.l}가 많은 게시물은 알고리즘에 의해 더 많은 사용자의 ${t.feed}에 노출되어 자연 도달률이 크게 향상됩니다.`,
+    },
+    {
+      label: "상품효과 03",
+      title: `${p} 비즈니스 성장 효과`,
+      desc: `${t.f}와 ${t.l}의 시너지 효과로 ${p} 계정이 종합적으로 성장합니다. 브랜드 인지도, 매출, 협업 기회까지 비즈니스 전반의 성과를 끌어올릴 수 있습니다.`,
+    },
+  ];
+}
 
 const faqs = [
   {
@@ -75,6 +95,10 @@ function ImageBox({ className = "" }: { className?: string }) {
 export default function ServiceGuide() {
   const [tab, setTab] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const platform = platformTabs[tab];
+  const serviceCards = buildCards(platform);
+  const effects = buildEffects(platform);
 
   return (
     <div className="flex flex-col gap-12 pt-2">
@@ -116,15 +140,14 @@ export default function ServiceGuide() {
               서비스 안내
             </h2>
             <p className="text-lg font-normal leading-[26px] text-gray">
-              한국인 인스타 팔로워 구매, 인스타그램 좋아요 늘리기 비즈니스 성장을
-              시작하세요
+              {platform} 마케팅으로 비즈니스 성장을 시작하세요
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {serviceCards.map((c) => (
               <div key={c.title} className="overflow-hidden rounded-xl">
                 <div className="flex h-[248px] items-center justify-center bg-navy">
-                  <SiInstagram className="text-6xl text-white/90" />
+                  {platformIcons[platform]}
                 </div>
                 <div className="flex flex-col gap-4 bg-soft p-7">
                   <h3 className="text-[22px] font-semibold leading-8 text-navy">
@@ -189,8 +212,7 @@ export default function ServiceGuide() {
               자주묻는질문
             </h2>
             <p className="text-lg font-normal leading-[26px] text-gray">
-              한국인 인스타 팔로워 구매, 인스타그램 좋아요 늘리기 비즈니스 성장을
-              시작하세요
+              {platform} 마케팅으로 비즈니스 성장을 시작하세요
             </p>
           </div>
           <div className="flex flex-col gap-5">

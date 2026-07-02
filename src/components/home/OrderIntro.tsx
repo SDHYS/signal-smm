@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChevronRight, Megaphone } from "lucide-react";
 import { FaTelegramPlane } from "react-icons/fa";
 
@@ -14,10 +15,13 @@ export default function OrderIntro() {
             시작하세요
           </p>
         </div>
-        <button className="flex shrink-0 items-center gap-2 text-sm font-medium text-gray transition-colors hover:text-navy">
+        <Link
+          href="/guide"
+          className="flex shrink-0 items-center gap-2 text-sm font-medium text-gray transition-colors hover:text-navy"
+        >
           신규 가이드 제작하기
           <ChevronRight size={16} strokeWidth={1.5} className="text-muted" />
-        </button>
+        </Link>
       </div>
 
       <div className="flex flex-col gap-3">

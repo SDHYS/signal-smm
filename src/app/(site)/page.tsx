@@ -4,7 +4,12 @@ import OrderFlow from "@/components/home/OrderFlow";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const user = await getCurrentUser();
   const products = await prisma.product.findMany({
     where: { isActive: true },
@@ -28,6 +33,7 @@ export default async function Home() {
         isLoggedIn={!!user}
         balance={user?.balance ?? 0}
         products={products}
+        query={q}
       />
     </div>
   );
