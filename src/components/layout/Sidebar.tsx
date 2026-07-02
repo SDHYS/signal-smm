@@ -72,11 +72,13 @@ export default function Sidebar({
       <div className="flex flex-col gap-15">
         <div className="flex flex-col gap-6">
           {/* 로고 */}
-          <Link href="/" className="flex items-center gap-1">
-            <span className="h-[30px] w-[28px] rounded bg-gradient-to-br from-[#91A0FF] via-[#6B80FF] to-[#606DBC]" />
-            <span className="text-2xl font-bold tracking-tight text-[#91A0FF]">
-              {siteName}
-            </span>
+          <Link href="/" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/로고텍스트일체형.png"
+              alt={siteName}
+              className="h-[30px] w-auto"
+            />
           </Link>
 
           {/* 네비게이션 */}

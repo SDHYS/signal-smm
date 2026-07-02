@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Megaphone } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { FaTelegramPlane } from "react-icons/fa";
 
 export default function OrderIntro({ ticker }: { ticker?: string | null }) {
@@ -34,8 +34,16 @@ export default function OrderIntro({ ticker }: { ticker?: string | null }) {
             인스타그램 팔로워 늘리기부터 유튜브, 페이스북까지 다양한 플랫폼의
             맞춤형 마케팅 서비스를 제공하고 있습니다.
           </p>
-          <div className="hidden shrink-0 items-center gap-4 sm:flex">
-            <Megaphone size={44} className="text-blue" strokeWidth={1.5} />
+          <div className="hidden shrink-0 items-center sm:flex">
+            <span className="flex h-[108px] w-[108px] items-center justify-center rounded-full bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/banners/주문하기_메인주문하기영역아이콘.png"
+                alt=""
+                aria-hidden
+                className="h-[62px] w-auto object-contain"
+              />
+            </span>
           </div>
         </div>
 

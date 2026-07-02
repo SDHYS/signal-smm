@@ -143,11 +143,22 @@ export default function ServiceGuide() {
               {platform} 마케팅으로 비즈니스 성장을 시작하세요
             </p>
           </div>
+          {/* 카드 일러스트: 순서대로 에셋 적용, 없는 카드는 플랫폼 아이콘 폴백 */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {serviceCards.map((c) => (
+            {serviceCards.map((c, i) => (
               <div key={c.title} className="overflow-hidden rounded-xl">
                 <div className="flex h-[248px] items-center justify-center bg-navy">
-                  {platformIcons[platform]}
+                  {i === 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src="/banners/서비스안내상단배너아이콘1.png"
+                      alt=""
+                      aria-hidden
+                      className="h-[172px] w-auto object-contain"
+                    />
+                  ) : (
+                    platformIcons[platform]
+                  )}
                 </div>
                 <div className="flex flex-col gap-4 bg-soft p-7">
                   <h3 className="text-[22px] font-semibold leading-8 text-navy">

@@ -9,6 +9,8 @@ type Card = {
   captionColor: string;
   titleColor: string;
   arrowColor: string;
+  img: string;
+  imgH: number;
 };
 
 const cards: Card[] = [
@@ -20,6 +22,8 @@ const cards: Card[] = [
     captionColor: "rgba(255,255,255,0.70)",
     titleColor: "#ffffff",
     arrowColor: "#ffffff",
+    img: "/banners/서비스안내_메인상단배너아이콘.png",
+    imgH: 98,
   },
   {
     caption: "무엇을 도와드릴까요? 편하게 남겨주세요",
@@ -29,6 +33,8 @@ const cards: Card[] = [
     captionColor: "rgba(31,35,83,0.70)",
     titleColor: "#1F2353",
     arrowColor: "#ffffff",
+    img: "/banners/11문의_메인상단배너아이콘.png",
+    imgH: 97,
   },
   {
     caption: "자주 묻는 질문부터 상담까지 한눈에",
@@ -38,6 +44,8 @@ const cards: Card[] = [
     captionColor: "rgba(31,35,83,0.70)",
     titleColor: "#1F2353",
     arrowColor: "#ffffff",
+    img: "/banners/고객센터_메인상단배너아이콘.png",
+    imgH: 109,
   },
 ];
 
@@ -76,12 +84,17 @@ export default function HeroSection() {
                 {c.title}
               </p>
             </div>
-            <ArrowUpRight size={40} style={{ color: c.arrowColor }} strokeWidth={2.5} />
-            {/* 일러스트 자리 */}
-            <span
-              className="pointer-events-none absolute -bottom-6 -right-4 h-32 w-32 rounded-full"
-              style={{ background: "rgba(255,255,255,0.18)" }}
-            />
+            <div className="flex items-end justify-between">
+              <ArrowUpRight size={40} style={{ color: c.arrowColor }} strokeWidth={2.5} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.img}
+                alt=""
+                aria-hidden
+                className="w-auto object-contain"
+                style={{ height: c.imgH }}
+              />
+            </div>
           </Link>
         ))}
       </div>
