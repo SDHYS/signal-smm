@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { adjustBalance, resetPassword } from "@/app/actions/members";
 
@@ -47,7 +48,9 @@ function Row({ m }: { m: MemberRow }) {
     <div className="flex flex-col gap-3 border-b border-line px-6 py-4 last:border-0 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-col">
         <span className="flex items-center gap-2 font-medium text-navy">
-          {m.name}
+          <Link href={`/admin/members/${m.id}`} className="hover:underline">
+            {m.name}
+          </Link>
           <span className="text-sm text-gray">@{m.username}</span>
           {m.role === "ADMIN" && (
             <span className="rounded-full bg-navy px-2 py-0.5 text-xs text-white">관리자</span>
@@ -91,6 +94,12 @@ function Row({ m }: { m: MemberRow }) {
         >
           비번 초기화
         </button>
+        <Link
+          href={`/admin/members/${m.id}`}
+          className="rounded border border-line px-3 py-2 text-xs font-medium text-navy hover:bg-soft"
+        >
+          상세
+        </Link>
       </div>
     </div>
   );

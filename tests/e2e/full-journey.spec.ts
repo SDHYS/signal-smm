@@ -1,4 +1,5 @@
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
+import { ADMIN_STATE } from "./paths";
 
 /**
  * 풀 여정 QA — 실제 사용자/관리자 두 세션으로 돈 흐름 전체를 검증한다.
@@ -48,9 +49,10 @@ test("회원 풀 여정 — 가입부터 환불·비번변경까지", async ({ p
   test.setTimeout(240_000);
   page.on("dialog", (d) => d.accept());
 
-  // 관리자 세션은 한 번만 로그인해 재사용 (admin 계정 로그인 제한 회피)
+  // 관리자 세션은 setup에서 저장한 storageState 재사용 (admin 로그인 반복 방지)
   const adminCtx: BrowserContext = await browser.newContext({
     viewport: { width: 1440, height: 900 },
+    storageState: ADMIN_STATE,
     extraHTTPHeaders: {
       "x-forwarded-for": `10.78.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
     },
