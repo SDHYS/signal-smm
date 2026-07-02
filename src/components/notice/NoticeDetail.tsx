@@ -23,7 +23,7 @@ export default function NoticeDetail({ notice }: { notice: NoticeDetailData }) {
     <div className="mx-auto flex w-full max-w-[1000px] flex-col items-center gap-15 pt-8">
       <div className="flex w-full flex-col gap-4">
         <div className="flex flex-col gap-4">
-          <h1 className="text-[32px] font-semibold leading-[42px] text-navy">
+          <h1 className="text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-navy">
             {notice.title}
           </h1>
           <div className="flex flex-wrap items-center gap-7 text-sm">

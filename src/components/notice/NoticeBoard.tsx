@@ -18,7 +18,7 @@ export default function NoticeBoard({
         <p className="text-base font-normal text-[#767676]">
           주요 서비스 소식 및 안내 확인
         </p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">공지사항</h1>
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">공지사항</h1>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -49,7 +49,7 @@ export default function NoticeBoard({
         )}
 
         <div className="overflow-x-auto">
-          <div className="min-w-[760px] border-t border-navy">
+          <div className="border-t border-navy">
             {notices.length === 0 ? (
               <p className="px-6 py-10 text-center text-base text-gray">
                 등록된 공지사항이 없습니다.
@@ -61,13 +61,13 @@ export default function NoticeBoard({
                   href={`/notice/${n.id}`}
                   className="flex items-center border-b border-line transition hover:bg-soft/50"
                 >
-                  <div className="w-[120px] px-6 py-8 text-center text-base font-normal text-orange">
+                  <div className="hidden w-[120px] px-6 py-8 text-center text-base font-normal text-orange sm:block">
                     No.{total - i}
                   </div>
-                  <div className="flex-1 px-6 py-8 text-lg font-medium text-navy">
+                  <div className="flex-1 px-4 py-6 text-base font-medium text-navy sm:px-6 sm:py-8 sm:text-lg">
                     {n.title}
                   </div>
-                  <div className="w-[160px] px-6 py-8 text-center text-base font-normal text-gray">
+                  <div className="w-[104px] shrink-0 px-2 py-6 text-center text-sm font-normal text-gray sm:w-[160px] sm:px-6 sm:py-8 sm:text-base">
                     {n.date}
                   </div>
                 </Link>

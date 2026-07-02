@@ -7,7 +7,7 @@ export default function OrderIntro({ ticker }: { ticker?: string | null }) {
     <section className="flex flex-col gap-7">
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <h2 className="text-[28px] font-bold leading-[38px] text-navy">
+          <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
             주문하기
           </h2>
           <p className="text-lg font-normal leading-[26px] text-gray">
@@ -26,7 +26,7 @@ export default function OrderIntro({ ticker }: { ticker?: string | null }) {
 
       <div className="flex flex-col gap-3">
         {/* 안내 박스 */}
-        <div className="flex items-center justify-between gap-6 rounded-xl bg-soft py-5 pl-9 pr-15">
+        <div className="flex items-center justify-between gap-6 rounded-xl bg-soft p-5 sm:py-5 sm:pl-9 sm:pr-15">
           <p className="text-base font-normal leading-[26px] text-navy">
             회원가입 이후 SNS서포터에서 24시간 언제든 원하는 마케팅 상품을 간편하게
             주문하세요.

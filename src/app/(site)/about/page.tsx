@@ -33,14 +33,14 @@ export default async function AboutPage() {
         <p className="text-base font-normal text-[#767676]">
           SNS 마케팅 파트너
         </p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
           회사 소개
         </h1>
       </div>
 
       {/* 소개 */}
       <section className="flex flex-col gap-6 rounded-2xl bg-soft p-10">
-        <h2 className="text-[28px] font-bold leading-[38px] text-navy">
+        <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
           <span className="text-orange">{siteName}</span>는 SNS 마케팅의 모든 것을
           제공합니다
         </h2>
@@ -55,7 +55,7 @@ export default async function AboutPage() {
 
       {/* 핵심 가치 */}
       <section className="flex flex-col gap-7">
-        <h2 className="text-[28px] font-bold leading-[38px] text-navy">
+        <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
           우리가 일하는 방식
         </h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

@@ -38,7 +38,7 @@ const statusMeta: Record<ChargeStatus, { label: string; cls: string }> = {
 const won = (n: number) => `${n.toLocaleString()}원`;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-[28px] font-bold leading-[38px] text-navy">{children}</h2>;
+  return <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">{children}</h2>;
 }
 
 function LabeledInput({
@@ -148,7 +148,7 @@ export default function ChargePage({
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
           <p className="text-base font-normal text-[#767676]">임시타이틀</p>
-          <h1 className="text-[40px] font-bold leading-[52px] text-black">잔액충전</h1>
+          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">잔액충전</h1>
         </div>
         <div className="flex items-center gap-3">
           <span className="rounded-full bg-blue px-6 py-3 text-sm font-medium text-white">
@@ -178,7 +178,7 @@ export default function ChargePage({
                 <button
                   key={p.value}
                   onClick={() => setAmount((a) => a + p.value)}
-                  className="rounded border border-line px-4 py-6 text-lg font-medium text-navy transition hover:border-blue hover:text-blue"
+                  className="rounded border border-line px-3 py-4 text-base font-medium text-navy transition hover:border-blue hover:text-blue sm:px-4 sm:py-6 sm:text-lg"
                 >
                   {p.label}
                 </button>
@@ -219,7 +219,7 @@ export default function ChargePage({
               value={depositor}
               onChange={(e) => setDepositor(e.target.value)}
               placeholder="입금자명을 작성해주세요"
-              className="w-full rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+              className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
             />
             <p className="text-sm font-normal leading-6 text-navy">
               입금자명이 다를 경우 자동충전이 안됩니다.
@@ -284,7 +284,7 @@ export default function ChargePage({
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+                  className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-6 py-5 text-lg font-medium sm:px-10 sm:py-8 sm:text-2xl text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   {loading ? "신청 중..." : "무통장입금 바로가기"}
                 </button>

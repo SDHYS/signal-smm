@@ -104,7 +104,7 @@ export default function OrderHistory({
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
           <p className="text-base font-normal text-[#767676]">임시타이틀</p>
-          <h1 className="text-[40px] font-bold leading-[52px] text-black">
+          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
             {isRefund ? "환불내역" : "주문내역"}
           </h1>
         </div>

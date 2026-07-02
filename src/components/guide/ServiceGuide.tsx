@@ -118,7 +118,7 @@ export default function ServiceGuide() {
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
           <p className="text-base font-normal text-[#767676]">임시타이틀</p>
-          <h1 className="text-[40px] font-bold leading-[52px] text-black">
+          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
             서비스 안내 및 주문 방법
           </h1>
         </div>
@@ -148,7 +148,7 @@ export default function ServiceGuide() {
         {/* 서비스 안내 카드 */}
         <section className="flex flex-col gap-7">
           <div className="flex flex-col gap-2">
-            <h2 className="text-[28px] font-bold leading-[38px] text-navy">
+            <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
               서비스 안내
             </h2>
             <p className="text-lg font-normal leading-[26px] text-gray">
@@ -186,13 +186,13 @@ export default function ServiceGuide() {
           {effects.map((e, i) => {
             const imageLeft = i % 2 === 1;
             const Text = (
-              <div className="w-full p-4 sm:p-8 lg:w-1/2">
+              <div className={`w-full p-4 sm:p-8 lg:w-1/2 ${imageLeft ? "" : "lg:order-1"}`}>
                 <div className="flex flex-col gap-5">
                   <p className="text-xl font-medium leading-[30px] text-orange">
                     {e.label}
                   </p>
                   <div className="flex flex-col gap-3">
-                    <h3 className="text-[32px] font-bold leading-[46px] text-navy">
+                    <h3 className="text-[22px] font-bold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[46px] text-navy">
                       {e.title}
                     </h3>
                     <p className="text-lg font-normal leading-[26px] text-gray">
@@ -202,23 +202,19 @@ export default function ServiceGuide() {
                 </div>
               </div>
             );
-            const Image = <ImageBox src={effectImages[i]} className="w-full lg:w-1/2" />;
+            const Image = (
+              <ImageBox
+                src={effectImages[i]}
+                className={`w-full lg:w-1/2 ${imageLeft ? "" : "lg:order-2"}`}
+              />
+            );
             return (
               <div
                 key={e.label}
                 className="flex flex-col items-center gap-8 lg:flex-row lg:gap-20"
               >
-                {imageLeft ? (
-                  <>
-                    {Image}
-                    {Text}
-                  </>
-                ) : (
-                  <>
-                    {Text}
-                    {Image}
-                  </>
-                )}
+                {Image}
+                {Text}
               </div>
             );
           })}
@@ -227,7 +223,7 @@ export default function ServiceGuide() {
         {/* 자주묻는질문 */}
         <section className="flex flex-col gap-7">
           <div className="flex flex-col gap-2">
-            <h2 className="text-[28px] font-bold leading-[38px] text-navy">
+            <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
               자주묻는질문
             </h2>
             <p className="text-lg font-normal leading-[26px] text-gray">

@@ -90,7 +90,7 @@ export default function MyPage({ info }: { info: MyInfo }) {
     <div className="flex flex-col gap-10 pt-2">
       <div className="flex flex-col gap-2.5">
         <p className="text-base font-normal text-[#767676]">내 계정 관리</p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">마이페이지</h1>
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">마이페이지</h1>
       </div>
 
       {/* 요약 */}

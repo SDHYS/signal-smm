@@ -43,7 +43,7 @@ export default async function InquiryDetailPage({
           </span>
           <span className="text-sm text-gray">{fmt(q.createdAt)}</span>
         </div>
-        <h1 className="text-[28px] font-bold leading-[38px] text-navy">{q.title}</h1>
+        <h1 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">{q.title}</h1>
       </div>
 
       <div className="whitespace-pre-line border-y border-line py-8 text-base leading-[26px] text-gray">

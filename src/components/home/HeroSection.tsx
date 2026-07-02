@@ -56,7 +56,7 @@ export default function HeroSection({ siteName }: { siteName: string }) {
         <p className="text-base font-normal text-gray">
           인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!
         </p>
-        <h1 className="text-[40px] font-bold leading-[1.3]">
+        <h1 className="text-[26px] font-bold leading-[1.35] sm:text-[32px] lg:text-[40px] lg:leading-[1.3]">
           <span className="text-orange">{siteName}</span>
           <span className="text-navy">에 오신것을 환영합니다!</span>
         </h1>

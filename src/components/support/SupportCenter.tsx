@@ -60,7 +60,7 @@ export default function SupportCenter() {
         <p className="text-base font-normal text-[#767676]">
           여기서 먼저 답을 찾아보세요.
         </p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
           궁금하신게 있으신가요?
         </h1>
       </div>

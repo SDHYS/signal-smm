@@ -25,7 +25,7 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
           <p className="text-base font-normal text-[#767676]">
             SNS 마케팅의 모든 것을 알려드립니다.
           </p>
-          <h1 className="text-[40px] font-bold leading-[52px] text-black">
+          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
             SNS 서포터 블로그
           </h1>
         </div>

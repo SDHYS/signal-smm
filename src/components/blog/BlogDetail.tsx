@@ -28,7 +28,7 @@ export default function BlogDetail({ post }: { post: BlogDetailData }) {
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <p className="text-base font-medium text-orange">{post.category}</p>
-            <h1 className="text-[32px] font-semibold leading-[42px] text-navy">
+            <h1 className="text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-navy">
               {post.title}
             </h1>
           </div>

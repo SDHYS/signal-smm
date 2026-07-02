@@ -25,7 +25,7 @@ export default function FindId() {
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-8 pt-10">
       <div className="flex flex-col gap-2.5">
         <p className="text-base font-normal text-[#767676]">계정 찾기</p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">아이디 찾기</h1>
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">아이디 찾기</h1>
       </div>
 
       {/* 아이디 찾기 */}

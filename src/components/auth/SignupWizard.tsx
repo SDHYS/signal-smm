@@ -84,7 +84,7 @@ function Shell({
         <div className="flex w-full flex-col gap-10 p-8 sm:p-15 lg:w-1/2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-2">
-              <h1 className="text-[32px] font-semibold leading-[42px] text-black">
+              <h1 className="text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-black">
                 {title}
               </h1>
               <p className="text-base font-normal leading-6 text-gray">{subtitle}</p>

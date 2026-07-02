@@ -12,7 +12,7 @@ export type InquiryRow = {
 function StatusPill({ answered }: { answered: boolean }) {
   return (
     <span
-      className={`rounded-full px-7 py-3 text-sm font-medium ${
+      className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium sm:px-7 sm:py-3 sm:text-sm ${
         answered ? "bg-blue text-white" : "bg-soft text-gray"
       }`}
     >
@@ -34,7 +34,7 @@ export default function InquiryBoard({
     <div className="flex flex-col gap-8 pt-2">
       <div className="flex flex-col gap-2.5">
         <p className="text-base font-normal text-[#767676]">담당자에게 직접 질문하기</p>
-        <h1 className="text-[40px] font-bold leading-[52px] text-black">1:1 문의</h1>
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">1:1 문의</h1>
       </div>
 
       <div className="flex flex-col gap-6">
@@ -77,12 +77,12 @@ export default function InquiryBoard({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
+            <div>
               <div className="flex items-center rounded-t-xl bg-soft text-base font-normal text-gray">
-                <div className="w-[120px] py-6 text-center">NO</div>
+                <div className="hidden w-[120px] py-6 text-center sm:block">NO</div>
                 <div className="flex-1 py-6 text-center">제목</div>
-                <div className="w-[240px] py-6 text-center">작성일</div>
-                <div className="w-[200px] py-6 text-center">문의상태</div>
+                <div className="hidden w-[160px] py-6 text-center md:block lg:w-[240px]">작성일</div>
+                <div className="w-[104px] py-6 text-center sm:w-[200px]">문의상태</div>
               </div>
               {inquiries.length === 0 ? (
                 <p className="border-b border-line px-6 py-10 text-center text-base text-gray">
@@ -95,16 +95,16 @@ export default function InquiryBoard({
                     href={`/inquiry/${q.id}`}
                     className="flex items-center border-b border-line transition hover:bg-soft/50"
                   >
-                    <div className="w-[120px] px-6 py-8 text-center text-base font-normal text-navy">
+                    <div className="hidden w-[120px] px-6 py-8 text-center text-base font-normal text-navy sm:block">
                       No.{q.no}
                     </div>
-                    <div className="flex-1 px-6 py-8 text-lg font-medium text-navy">
+                    <div className="flex-1 px-4 py-6 text-base font-medium text-navy sm:px-6 sm:py-8 sm:text-lg">
                       {q.title}
                     </div>
-                    <div className="w-[240px] px-6 py-8 text-center text-base font-normal text-navy">
+                    <div className="hidden w-[160px] px-6 py-8 text-center text-base font-normal text-navy md:block lg:w-[240px]">
                       {q.date}
                     </div>
-                    <div className="flex w-[200px] items-center justify-center px-6 py-8">
+                    <div className="flex w-[104px] shrink-0 items-center justify-center px-1 py-6 sm:w-[200px] sm:px-6 sm:py-8">
                       <StatusPill answered={q.answered} />
                     </div>
                   </Link>

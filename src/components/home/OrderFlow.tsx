@@ -25,7 +25,7 @@ function StepHeader({ step, title }: { step: string; title: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-base font-medium text-orange">{step}</p>
-      <h2 className="text-[28px] font-bold leading-[38px] text-navy">{title}</h2>
+      <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">{title}</h2>
     </div>
   );
 }
@@ -153,7 +153,7 @@ export default function OrderFlow({
       {/* STEP 01 — 플랫폼 선택 */}
       <section className="flex flex-col gap-7">
         <StepHeader step="STEP 01" title="이용하실 SNS 플랫폼을 선택해 주세요." />
-        <div className="grid grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-5 sm:gap-x-4 sm:gap-y-7 lg:grid-cols-7 xl:grid-cols-9">
           {platforms.map((p, i) => {
             const active = i === platformIdx;
             return (
@@ -169,7 +169,7 @@ export default function OrderFlow({
                 <img
                   src={p.def}
                   alt={p.name}
-                  className={`h-[120px] w-[120px] object-contain ${
+                  className={`h-24 w-24 object-contain sm:h-[120px] sm:w-[120px] ${
                     active ? "hidden" : "block group-hover:hidden"
                   }`}
                 />
@@ -178,12 +178,12 @@ export default function OrderFlow({
                   src={p.hover}
                   alt=""
                   aria-hidden
-                  className={`h-[120px] w-[120px] object-contain ${
+                  className={`h-24 w-24 object-contain sm:h-[120px] sm:w-[120px] ${
                     active ? "block" : "hidden group-hover:block"
                   }`}
                 />
                 <span
-                  className={`text-center text-lg font-medium ${
+                  className={`text-center text-sm font-medium sm:text-lg ${
                     active ? "text-blue" : "text-navy"
                   }`}
                 >
@@ -452,7 +452,7 @@ export default function OrderFlow({
           value={link}
           onChange={(e) => setLink(e.target.value)}
           placeholder="게시물 링크를 입력해주세요"
-          className="w-full rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+          className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
         />
       </section>
 
@@ -465,7 +465,7 @@ export default function OrderFlow({
             onChange={(e) => setQty(e.target.value.replace(/[^0-9]/g, ""))}
             inputMode="numeric"
             placeholder={`최소 ${minQty} ~ 최대 ${maxQty}`}
-            className="w-full rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+            className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
           />
           <p className="text-sm font-normal text-navy">
             최소 주문가능 수량: {minQty.toLocaleString()} - 최대 주문가능 수량:{" "}
@@ -477,7 +477,7 @@ export default function OrderFlow({
       {/* STEP 06 — 주문금액 */}
       <section className="flex flex-col gap-7">
         <StepHeader step="STEP 06" title="주문금액" />
-        <div className="flex items-center justify-between rounded-lg border border-line bg-white px-6 py-7 text-lg font-normal text-navy">
+        <div className="flex flex-col items-start gap-1 rounded-lg border border-line bg-white px-5 py-4 text-base font-normal text-navy sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-7 sm:text-lg">
           <span>₩{amount.toLocaleString()}</span>
           <span className="text-sm text-gray">
             보유잔액 ₩{balance.toLocaleString()}
@@ -491,7 +491,7 @@ export default function OrderFlow({
         <button
           onClick={handleOrder}
           disabled={loading}
-          className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-10 py-8 text-2xl font-medium text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+          className="flex items-center justify-center rounded-lg bg-gradient-to-r from-[#E97C5E] via-[#EF552B] to-[#C23610] px-6 py-5 text-lg font-medium sm:px-10 sm:py-8 sm:text-2xl text-white shadow-[12px_12px_24px_rgba(255,141,110,0.6)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
         >
           {loading ? "주문 중..." : "주문하기"}
         </button>
