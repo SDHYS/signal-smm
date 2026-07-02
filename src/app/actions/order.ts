@@ -159,6 +159,22 @@ export async function setOrderStatus(
   return { ok: true };
 }
 
+// ── 관리자: 주문 메모 저장 ────────────────────────────
+export async function setOrderMemo(id: string, memo: string): Promise<OrderResult> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, error: "권한이 없습니다." };
+
+  const trimmed = memo.trim();
+  await prisma.order.update({
+    where: { id },
+    data: { adminMemo: trimmed || null },
+  });
+
+  revalidatePath("/admin/orders");
+  return { ok: true };
+}
+
 // ── 관리자: 주문 환불(취소 + 잔액 복구) ───────────────
 export async function refundOrder(id: string): Promise<OrderResult> {
   const admin = await getCurrentUser();

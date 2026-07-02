@@ -1,11 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import AdminCharges, { type PendingCharge } from "@/components/admin/AdminCharges";
 import AdminMessage from "@/components/admin/AdminMessage";
+import DashboardStats, { type Stat } from "@/components/admin/DashboardStats";
 
 const won = (n: number) => `${n.toLocaleString()}원`;
 
 export default async function AdminPage() {
-  const [pending, confirmedCount, processed] = await Promise.all([
+  // 오늘 0시 기준(KST). 서버가 UTC일 수 있으므로 KST 오프셋으로 계산.
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + kstOffset);
+  const kstMidnight = new Date(
+    Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate()),
+  );
+  const todayStart = new Date(kstMidnight.getTime() - kstOffset);
+
+  const [
+    pending,
+    confirmedCount,
+    processed,
+    memberCount,
+    todayOrders,
+    todaySales,
+    processingCount,
+    pendingInquiries,
+  ] = await Promise.all([
     prisma.chargeRequest.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
@@ -18,7 +37,44 @@ export default async function AdminPage() {
       take: 10,
       include: { user: { select: { username: true, name: true } } },
     }),
+    prisma.user.count(),
+    prisma.order.count({
+      where: { createdAt: { gte: todayStart }, status: { not: "CANCELLED" } },
+    }),
+    prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { createdAt: { gte: todayStart }, status: { not: "CANCELLED" } },
+    }),
+    prisma.order.count({ where: { status: "PROCESSING" } }),
+    prisma.inquiry.count({ where: { status: "PENDING" } }),
   ]);
+
+  const stats: Stat[] = [
+    { label: "오늘 주문", value: `${todayOrders}건`, accent: "blue", href: "/admin/orders" },
+    {
+      label: "오늘 매출",
+      value: won(todaySales._sum.totalAmount ?? 0),
+      sub: "환불 제외",
+      accent: "green",
+    },
+    {
+      label: "입금 대기",
+      value: `${pending.length}건`,
+      accent: "orange",
+      sub: "처리 필요",
+    },
+    {
+      label: "진행중 주문",
+      value: `${processingCount}건`,
+      href: "/admin/orders?status=PROCESSING",
+    },
+    {
+      label: "미답변 문의",
+      value: `${pendingInquiries}건`,
+      accent: pendingInquiries > 0 ? "orange" : "navy",
+      href: "/admin/inquiries",
+    },
+  ];
 
   const charges: PendingCharge[] = pending.map((c) => ({
     id: c.id,
@@ -34,8 +90,13 @@ export default async function AdminPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4">
+        <h1 className="text-3xl font-bold text-navy">대시보드</h1>
+        <DashboardStats stats={stats} />
+      </div>
+
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-navy">충전 입금 확인</h1>
+        <h2 className="text-xl font-semibold text-navy">충전 입금 확인</h2>
         <p className="text-base text-gray">
           입금 대기 <span className="font-semibold text-orange">{charges.length}</span>건 · 처리완료{" "}
           {confirmedCount}건

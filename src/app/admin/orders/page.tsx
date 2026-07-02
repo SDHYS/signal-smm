@@ -1,15 +1,69 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import AdminOrders, { type AdminOrder } from "@/components/admin/AdminOrders";
 
-export default async function AdminOrdersPage() {
-  const rows = await prisma.order.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    include: {
-      user: { select: { username: true, name: true } },
-      items: { take: 1, select: { productName: true, quantity: true, targetUrl: true } },
-    },
-  });
+const STATUSES = ["PENDING_PAYMENT", "PAID", "PROCESSING", "COMPLETED", "CANCELLED"] as const;
+const PAGE_SIZE = 50;
+
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
+}) {
+  const { status, q, page } = await searchParams;
+  const query = q?.trim() ?? "";
+  const activeStatus = STATUSES.includes(status as never) ? status! : "ALL";
+  const pageNum = Math.max(1, Number(page) || 1);
+
+  const where: Prisma.OrderWhereInput = {
+    ...(activeStatus !== "ALL" ? { status: activeStatus as never } : {}),
+    ...(query
+      ? {
+          OR: [
+            { orderNo: { contains: query, mode: "insensitive" } },
+            { user: { username: { contains: query, mode: "insensitive" } } },
+            { user: { name: { contains: query, mode: "insensitive" } } },
+            { items: { some: { productName: { contains: query, mode: "insensitive" } } } },
+          ],
+        }
+      : {}),
+  };
+
+  // 상태별 건수(검색어 반영) + 페이지 데이터
+  const [rows, filteredCount, grouped] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (pageNum - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      include: {
+        user: { select: { username: true, name: true } },
+        items: { take: 1, select: { productName: true, quantity: true, targetUrl: true } },
+      },
+    }),
+    prisma.order.count({ where }),
+    prisma.order.groupBy({
+      by: ["status"],
+      _count: { id: true },
+      where: query
+        ? {
+            OR: [
+              { orderNo: { contains: query, mode: "insensitive" } },
+              { user: { username: { contains: query, mode: "insensitive" } } },
+              { user: { name: { contains: query, mode: "insensitive" } } },
+              { items: { some: { productName: { contains: query, mode: "insensitive" } } } },
+            ],
+          }
+        : {},
+    }),
+  ]);
+
+  const countByStatus: Record<string, number> = {};
+  let allCount = 0;
+  for (const g of grouped) {
+    countByStatus[g.status] = g._count.id;
+    allCount += g._count.id;
+  }
 
   const orders: AdminOrder[] = rows.map((o) => ({
     id: o.id,
@@ -21,16 +75,22 @@ export default async function AdminOrdersPage() {
     productName: o.items[0]?.productName ?? "주문",
     quantity: o.items[0]?.quantity ?? 0,
     targetUrl: o.items[0]?.targetUrl ?? null,
+    adminMemo: o.adminMemo ?? "",
     createdAt: o.createdAt.toISOString(),
   }));
 
+  const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
+
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-navy">주문 관리</h1>
-        <p className="text-base text-gray">최근 주문 {orders.length}건</p>
-      </div>
-      <AdminOrders orders={orders} />
-    </div>
+    <AdminOrders
+      orders={orders}
+      activeStatus={activeStatus}
+      query={query}
+      allCount={allCount}
+      countByStatus={countByStatus}
+      filteredCount={filteredCount}
+      page={pageNum}
+      totalPages={totalPages}
+    />
   );
 }
