@@ -64,11 +64,15 @@ export async function deleteProduct(id: string): Promise<Result> {
   if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
   try {
     await prisma.product.delete({ where: { id } });
-  } catch {
-    return {
-      ok: false,
-      error: "주문에 사용된 상품은 삭제할 수 없습니다. 비활성화로 숨겨주세요.",
-    };
+  } catch (e) {
+    // P2003 = FK 제약 위반(주문 이력 존재). 그 외 에러는 로그로 원인 보존
+    if ((e as { code?: string })?.code === "P2003")
+      return {
+        ok: false,
+        error: "주문에 사용된 상품은 삭제할 수 없습니다. 비활성화로 숨겨주세요.",
+      };
+    console.error("deleteProduct failed", e);
+    return { ok: false, error: "삭제 중 오류가 발생했습니다." };
   }
   revalidatePath("/");
   revalidatePath("/admin/products");

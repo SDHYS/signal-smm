@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
 export type Result = { ok: boolean; error?: string; id?: string };
 
@@ -13,6 +14,9 @@ export async function createInquiry(input: {
 }): Promise<Result> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
+
+  if (!(await rateLimit("inquiry", { max: 5, windowMs: 10 * 60_000, key: user.id })))
+    return { ok: false, error: RATE_LIMITED_MSG };
   if (!input.title.trim() || !input.content.trim())
     return { ok: false, error: "제목과 내용을 입력해주세요." };
 

@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
 export type ActionResult = { ok: boolean; error?: string; id?: string };
 
 const VAT_RATE = 0.1;
+const MAX_CHARGE = 10_000_000; // 1회 최대 충전 금액
 
 export async function createChargeRequest(input: {
   amount: number;
@@ -18,9 +20,17 @@ export async function createChargeRequest(input: {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
 
+  if (!(await rateLimit("charge", { max: 5, windowMs: 60_000, key: user.id })))
+    return { ok: false, error: RATE_LIMITED_MSG };
+
   const amount = Math.floor(input.amount);
-  if (!amount || amount <= 0)
+  if (!Number.isSafeInteger(amount) || amount <= 0)
     return { ok: false, error: "충전 금액을 선택해주세요." };
+  if (amount > MAX_CHARGE)
+    return {
+      ok: false,
+      error: `1회 최대 충전 금액은 ${MAX_CHARGE.toLocaleString()}원입니다.`,
+    };
 
   const depositorName = input.depositorName?.trim() ?? "";
   if (!depositorName) return { ok: false, error: "입금자명을 입력해주세요." };
@@ -76,19 +86,32 @@ export async function confirmCharge(id: string): Promise<ActionResult> {
     return { ok: false, error: "권한이 없습니다." };
 
   const cr = await prisma.chargeRequest.findUnique({ where: { id } });
-  if (!cr || cr.status !== "PENDING")
-    return { ok: false, error: "이미 처리됐거나 존재하지 않는 신청입니다." };
+  if (!cr) return { ok: false, error: "존재하지 않는 신청입니다." };
 
-  await prisma.$transaction([
-    prisma.chargeRequest.update({
-      where: { id },
-      data: { status: "CONFIRMED", confirmedById: admin.id, confirmedAt: new Date() },
-    }),
-    prisma.user.update({
-      where: { id: cr.userId },
-      data: { balance: { increment: cr.amount } },
-    }),
-  ]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      // PENDING → CONFIRMED 전환을 원자적으로 선점 — 동시 클릭해도 잔액은 1번만 반영
+      const upd = await tx.chargeRequest.updateMany({
+        where: { id, status: "PENDING" },
+        data: {
+          status: "CONFIRMED",
+          confirmedById: admin.id,
+          confirmedAt: new Date(),
+        },
+      });
+      if (upd.count === 0) throw new Error("ALREADY_HANDLED");
+
+      await tx.user.update({
+        where: { id: cr.userId },
+        data: { balance: { increment: cr.amount } },
+      });
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "ALREADY_HANDLED")
+      return { ok: false, error: "이미 처리된 신청입니다." };
+    console.error("confirmCharge failed", e);
+    return { ok: false, error: "입금 확인 처리 중 오류가 발생했습니다." };
+  }
 
   await notify(cr.userId, {
     type: "charge",
@@ -107,13 +130,13 @@ export async function cancelCharge(id: string): Promise<ActionResult> {
     return { ok: false, error: "권한이 없습니다." };
 
   const cr = await prisma.chargeRequest.findUnique({ where: { id } });
-  if (!cr || cr.status !== "PENDING")
-    return { ok: false, error: "처리할 수 없는 신청입니다." };
+  if (!cr) return { ok: false, error: "존재하지 않는 신청입니다." };
 
-  await prisma.chargeRequest.update({
-    where: { id },
+  const upd = await prisma.chargeRequest.updateMany({
+    where: { id, status: "PENDING" },
     data: { status: "CANCELLED" },
   });
+  if (upd.count === 0) return { ok: false, error: "이미 처리된 신청입니다." };
 
   await notify(cr.userId, {
     type: "charge",

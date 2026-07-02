@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Star, UserPlus, X } from "lucide-react";
@@ -65,6 +65,9 @@ export default function OrderFlow({
   const [qty, setQty] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 리렌더 전 더블클릭(따닥) 차단 + 서버 멱등성 키
+  const inFlightRef = useRef(false);
+  const orderKeyRef = useRef<string | null>(null);
 
   const selectedPlatform = platformIdx >= 0 ? platforms[platformIdx] : null;
 
@@ -133,18 +136,28 @@ export default function OrderFlow({
     if (amount > balance)
       return setError("잔액이 부족합니다. 잔액충전 후 이용해주세요.");
 
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    if (!orderKeyRef.current) orderKeyRef.current = crypto.randomUUID();
+
     setLoading(true);
-    const res = await createOrder({
-      productId: product.id,
-      quantity,
-      targetUrl: link,
-    });
-    setLoading(false);
-    if (res.ok) {
-      router.push("/orders");
-      router.refresh();
-    } else {
-      setError(res.error ?? "주문에 실패했습니다.");
+    try {
+      const res = await createOrder({
+        productId: product.id,
+        quantity,
+        targetUrl: link,
+        clientKey: orderKeyRef.current,
+      });
+      if (res.ok) {
+        orderKeyRef.current = null;
+        router.push("/orders");
+        router.refresh();
+      } else {
+        setError(res.error ?? "주문에 실패했습니다.");
+      }
+    } finally {
+      inFlightRef.current = false;
+      setLoading(false);
     }
   }
 

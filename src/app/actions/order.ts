@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
 
@@ -11,9 +12,26 @@ export async function createOrder(input: {
   productId: string;
   quantity: number;
   targetUrl: string;
+  clientKey?: string;
 }): Promise<OrderResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
+
+  if (!(await rateLimit("order", { max: 10, windowMs: 60_000, key: user.id })))
+    return { ok: false, error: RATE_LIMITED_MSG };
+
+  // 멱등성: 같은 clientKey로 이미 생성된 주문이 있으면 재생성 없이 그대로 반환
+  const clientKey = input.clientKey?.trim() || null;
+  if (clientKey) {
+    const dup = await prisma.order.findUnique({
+      where: { clientKey },
+      select: { orderNo: true, userId: true },
+    });
+    if (dup) {
+      if (dup.userId !== user.id) return { ok: false, error: "잘못된 요청입니다." };
+      return { ok: true, orderNo: dup.orderNo };
+    }
+  }
 
   const product = await prisma.product.findUnique({
     where: { id: input.productId },
@@ -22,7 +40,7 @@ export async function createOrder(input: {
     return { ok: false, error: "존재하지 않는 상품입니다." };
 
   const qty = Math.floor(input.quantity);
-  if (qty < product.minQty || qty > product.maxQty)
+  if (!Number.isSafeInteger(qty) || qty < product.minQty || qty > product.maxQty)
     return {
       ok: false,
       error: `수량은 ${product.minQty} ~ ${product.maxQty} 사이여야 합니다.`,
@@ -46,6 +64,7 @@ export async function createOrder(input: {
       await tx.order.create({
         data: {
           orderNo,
+          clientKey,
           userId: user.id,
           status: "PAID",
           totalAmount: total,
@@ -66,6 +85,14 @@ export async function createOrder(input: {
   } catch (e) {
     if (e instanceof Error && e.message === "INSUFFICIENT")
       return { ok: false, error: "잔액이 부족합니다. 충전 후 이용해주세요." };
+    // clientKey 유니크 충돌 = 동시 중복 제출 → 먼저 생성된 주문을 그대로 반환 (차감은 롤백됨)
+    if ((e as { code?: string })?.code === "P2002" && clientKey) {
+      const dup = await prisma.order.findUnique({
+        where: { clientKey },
+        select: { orderNo: true, userId: true },
+      });
+      if (dup?.userId === user.id) return { ok: true, orderNo: dup.orderNo };
+    }
     console.error("createOrder failed", e);
     return { ok: false, error: "주문 처리 중 오류가 발생했습니다." };
   }
@@ -78,6 +105,20 @@ export async function createOrder(input: {
 // ── 관리자: 주문 상태 변경 ────────────────────────────
 type OrderStatus = "PAID" | "PROCESSING" | "COMPLETED";
 
+type AnyOrderStatus =
+  | "PENDING_PAYMENT"
+  | "PAID"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "CANCELLED";
+
+// 허용되는 상태 전이(from) — 환불(CANCELLED)된 주문은 어떤 상태로도 되돌릴 수 없음
+const ALLOWED_FROM: Record<OrderStatus, AnyOrderStatus[]> = {
+  PAID: ["PENDING_PAYMENT"],
+  PROCESSING: ["PAID"],
+  COMPLETED: ["PAID", "PROCESSING"],
+};
+
 export async function setOrderStatus(
   id: string,
   status: OrderStatus,
@@ -86,25 +127,31 @@ export async function setOrderStatus(
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
-  const updated = await prisma.order.update({
-    where: { id },
+  const updated = await prisma.order.updateMany({
+    where: { id, status: { in: ALLOWED_FROM[status] } },
     data: {
       status,
       completedAt: status === "COMPLETED" ? new Date() : null,
     },
+  });
+  if (updated.count === 0)
+    return { ok: false, error: "현재 상태에서는 변경할 수 없습니다." };
+
+  const order = await prisma.order.findUnique({
+    where: { id },
     select: { userId: true, orderNo: true },
   });
-
   const label: Record<OrderStatus, string> = {
     PAID: "결제완료",
     PROCESSING: "진행중",
     COMPLETED: "완료",
   };
-  await notify(updated.userId, {
-    type: "order",
-    title: `주문 #${updated.orderNo}이(가) ${label[status]} 처리되었습니다.`,
-    link: "/orders",
-  });
+  if (order)
+    await notify(order.userId, {
+      type: "order",
+      title: `주문 #${order.orderNo}이(가) ${label[status]} 처리되었습니다.`,
+      link: "/orders",
+    });
 
   revalidatePath("/admin/orders");
   revalidatePath("/orders");
@@ -119,19 +166,27 @@ export async function refundOrder(id: string): Promise<OrderResult> {
 
   const order = await prisma.order.findUnique({ where: { id } });
   if (!order) return { ok: false, error: "주문을 찾을 수 없습니다." };
-  if (order.status === "CANCELLED")
-    return { ok: false, error: "이미 환불된 주문입니다." };
 
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id },
-      data: { status: "CANCELLED", cancelledAt: new Date() },
-    }),
-    prisma.user.update({
-      where: { id: order.userId },
-      data: { balance: { increment: order.totalAmount } },
-    }),
-  ]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 상태 전환을 원자적으로 선점 — 동시 클릭해도 1건만 통과 (이중 환불 방지)
+      const upd = await tx.order.updateMany({
+        where: { id, status: { in: ["PAID", "PROCESSING"] } },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+      if (upd.count === 0) throw new Error("NOT_REFUNDABLE");
+
+      await tx.user.update({
+        where: { id: order.userId },
+        data: { balance: { increment: order.totalAmount } },
+      });
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "NOT_REFUNDABLE")
+      return { ok: false, error: "환불할 수 없는 상태의 주문입니다." };
+    console.error("refundOrder failed", e);
+    return { ok: false, error: "환불 처리 중 오류가 발생했습니다." };
+  }
 
   await notify(order.userId, {
     type: "order",

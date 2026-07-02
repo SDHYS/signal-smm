@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
 export type Result = { ok: boolean; error?: string; data?: string };
 
@@ -65,6 +66,10 @@ export async function changePassword(input: {
 
 // 아이디 찾기: 이메일 → 마스킹된 아이디
 export async function findUsername(email: string): Promise<Result> {
+  // 이메일 기반 계정 존재 열거 방지
+  if (!(await rateLimit("find-id", { max: 5, windowMs: 10 * 60_000 })))
+    return { ok: false, error: RATE_LIMITED_MSG };
+
   const normalized = email?.trim().toLowerCase();
   if (!emailRe.test(normalized ?? ""))
     return { ok: false, error: "이메일 형식이 올바르지 않습니다." };

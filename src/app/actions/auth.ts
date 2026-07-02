@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/session";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -17,6 +18,9 @@ export type SignupInput = {
 };
 
 export async function signupAction(input: SignupInput): Promise<ActionResult> {
+  if (!(await rateLimit("signup", { max: 5, windowMs: 10 * 60_000 })))
+    return { ok: false, error: RATE_LIMITED_MSG };
+
   const username = input.username?.trim() ?? "";
   const email = input.email?.trim().toLowerCase() ?? "";
   const { password, passwordConfirm } = input;
@@ -65,6 +69,13 @@ export async function loginAction(input: {
   const username = input.username?.trim() ?? "";
   if (!username || !input.password)
     return { ok: false, error: "아이디와 비밀번호를 입력해주세요." };
+
+  // IP 기준 + 계정 기준 이중 제한 (무차별 대입 방어)
+  if (
+    !(await rateLimit("login-ip", { max: 10, windowMs: 60_000 })) ||
+    !(await rateLimit("login-user", { max: 5, windowMs: 60_000, key: username }))
+  )
+    return { ok: false, error: RATE_LIMITED_MSG };
 
   const user = await prisma.user.findUnique({
     where: { username },

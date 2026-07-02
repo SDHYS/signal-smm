@@ -97,6 +97,7 @@ enum OrderStatus {
 model Order {
   id            String      @id @default(cuid())
   orderNo       String      @unique // 사람이 읽는 주문번호 (예: 20260629-0001)
+  clientKey     String?     @unique // 클라이언트 생성 멱등성 키 (중복 제출 방지)
   userId        String
   user          User        @relation(fields: [userId], references: [id])
   status        OrderStatus @default(PENDING_PAYMENT)
