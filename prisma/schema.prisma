@@ -28,6 +28,7 @@ model User {
   orders        Order[]
   charges       ChargeRequest[]
   inquiries     Inquiry[]
+  notifications Notification[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -195,4 +196,21 @@ model Inquiry {
   @@index([userId])
   @@index([status])
   @@map("inquiries")
+}
+
+// ── 알림 (주문/충전/문의/관리자 쪽지) ────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   @default("system") // order | charge | inquiry | message
+  title     String
+  body      String?  @db.Text
+  link      String? // 클릭 시 이동 경로
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
 
@@ -85,13 +86,26 @@ export async function setOrderStatus(
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
-  await prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id },
     data: {
       status,
       completedAt: status === "COMPLETED" ? new Date() : null,
     },
+    select: { userId: true, orderNo: true },
   });
+
+  const label: Record<OrderStatus, string> = {
+    PAID: "결제완료",
+    PROCESSING: "진행중",
+    COMPLETED: "완료",
+  };
+  await notify(updated.userId, {
+    type: "order",
+    title: `주문 #${updated.orderNo}이(가) ${label[status]} 처리되었습니다.`,
+    link: "/orders",
+  });
+
   revalidatePath("/admin/orders");
   revalidatePath("/orders");
   return { ok: true };
@@ -118,6 +132,13 @@ export async function refundOrder(id: string): Promise<OrderResult> {
       data: { balance: { increment: order.totalAmount } },
     }),
   ]);
+
+  await notify(order.userId, {
+    type: "order",
+    title: `주문 #${order.orderNo}이(가) 환불되었습니다. ${order.totalAmount.toLocaleString()}원이 잔액으로 복구되었습니다.`,
+    link: "/orders",
+  });
+
   revalidatePath("/admin/orders");
   revalidatePath("/orders");
   return { ok: true };

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import AdminCharges, { type PendingCharge } from "@/components/admin/AdminCharges";
+import AdminMessage from "@/components/admin/AdminMessage";
 
 export default async function AdminPage() {
   const [pending, confirmedCount] = await Promise.all([
@@ -33,6 +34,7 @@ export default async function AdminPage() {
         </p>
       </div>
       <AdminCharges charges={charges} />
+      <AdminMessage />
     </div>
   );
 }

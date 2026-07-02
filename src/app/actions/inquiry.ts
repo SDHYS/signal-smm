@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 
 export type Result = { ok: boolean; error?: string; id?: string };
 
@@ -34,7 +35,7 @@ export async function answerInquiry(id: string, answer: string): Promise<Result>
     return { ok: false, error: "권한이 없습니다." };
   if (!answer.trim()) return { ok: false, error: "답변 내용을 입력해주세요." };
 
-  await prisma.inquiry.update({
+  const updated = await prisma.inquiry.update({
     where: { id },
     data: {
       answer: answer.trim(),
@@ -42,7 +43,15 @@ export async function answerInquiry(id: string, answer: string): Promise<Result>
       answeredById: admin.id,
       answeredAt: new Date(),
     },
+    select: { userId: true, title: true },
   });
+
+  await notify(updated.userId, {
+    type: "inquiry",
+    title: `1:1 문의 "${updated.title}"에 답변이 등록되었습니다.`,
+    link: `/inquiry/${id}`,
+  });
+
   revalidatePath("/admin/inquiries");
   revalidatePath(`/inquiry/${id}`);
   revalidatePath("/inquiry");

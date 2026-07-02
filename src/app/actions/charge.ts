@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { notify } from "@/lib/notify";
 
 export type ActionResult = { ok: boolean; error?: string; id?: string };
 
@@ -72,6 +73,12 @@ export async function confirmCharge(id: string): Promise<ActionResult> {
     }),
   ]);
 
+  await notify(cr.userId, {
+    type: "charge",
+    title: `충전 완료 — ${cr.amount.toLocaleString()}원이 잔액에 반영되었습니다.`,
+    link: "/charge",
+  });
+
   revalidatePath("/admin");
   revalidatePath("/charge");
   return { ok: true };
@@ -89,6 +96,12 @@ export async function cancelCharge(id: string): Promise<ActionResult> {
   await prisma.chargeRequest.update({
     where: { id },
     data: { status: "CANCELLED" },
+  });
+
+  await notify(cr.userId, {
+    type: "charge",
+    title: `충전 신청(${cr.amount.toLocaleString()}원)이 취소되었습니다.`,
+    link: "/charge",
   });
 
   revalidatePath("/admin");
