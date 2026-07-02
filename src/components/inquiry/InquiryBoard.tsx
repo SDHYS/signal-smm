@@ -71,7 +71,7 @@ export default function InquiryBoard({
             <span className="text-base font-medium text-navy">
               로그인 후 1:1 문의를 작성·확인할 수 있습니다.
             </span>
-            <Link href="/login" className="rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
+            <Link href="/login" className="shrink-0 whitespace-nowrap rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
               로그인
             </Link>
           </div>

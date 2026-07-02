@@ -147,7 +147,7 @@ export default function ChargePage({
       {/* 헤더 */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <p className="text-base font-normal text-[#767676]">임시타이틀</p>
+          <p className="text-base font-normal text-[#767676]">무통장입금으로 간편하게 잔액 충전</p>
           <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">잔액충전</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export default function ChargePage({
           <span className="text-base font-medium text-navy">
             충전은 로그인 후 이용할 수 있습니다.
           </span>
-          <Link href="/login" className="rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
+          <Link href="/login" className="shrink-0 whitespace-nowrap rounded-lg bg-blue px-6 py-3 text-sm font-medium text-white">
             로그인
           </Link>
         </div>

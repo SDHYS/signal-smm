@@ -26,6 +26,8 @@ html {
 }
 
 body {
+  word-break: keep-all;
+  overflow-wrap: break-word;
   background: #ffffff;
   color: var(--color-navy);
   font-family: var(--font-sans);

@@ -117,7 +117,7 @@ export default function ServiceGuide() {
       {/* 헤더 */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <p className="text-base font-normal text-[#767676]">임시타이틀</p>
+          <p className="text-base font-normal text-[#767676]">이용 방법과 서비스 효과 안내</p>
           <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
             서비스 안내 및 주문 방법
           </h1>
@@ -131,7 +131,7 @@ export default function ServiceGuide() {
               <button
                 key={t}
                 onClick={() => setTab(i)}
-                className={`flex-1 px-2 py-4 text-center text-lg transition ${
+                className={`flex-1 whitespace-nowrap px-1 py-4 text-center text-sm transition sm:px-2 sm:text-lg ${
                   active
                     ? "border-b-[3px] border-[#E97C5E] font-semibold text-[#E97C5E]"
                     : "font-normal text-[#999999] hover:text-navy"
