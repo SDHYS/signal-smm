@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { SiInstagram, SiYoutube, SiFacebook, SiTiktok } from "react-icons/si";
 
-const platformIcons: Record<string, React.ReactNode> = {
-  인스타그램: <SiInstagram className="text-6xl text-white/90" />,
-  유튜브: <SiYoutube className="text-6xl text-white/90" />,
-  페이스북: <SiFacebook className="text-6xl text-white/90" />,
-  틱톡: <SiTiktok className="text-6xl text-white/90" />,
-};
+// 서비스 안내 카드 일러스트 (디자인 치수 기준 높이)
+const cardImages = [
+  { src: "/banners/서비스안내상단배너아이콘1.png", h: 172 },
+  { src: "/banners/서비스안내상단배너아이콘2.png", h: 177 },
+  { src: "/banners/서비스안내상단배너아이콘3.png", h: 129 },
+];
+
+// 상품효과 01~03 이미지
+const effectImages = [
+  "/banners/주문하기_상품효과_1.png",
+  "/banners/주문하기_상품효과_2.png",
+  "/banners/주문하기_상품효과_3.png",
+];
 
 const platformTabs = ["인스타그램", "유튜브", "페이스북", "틱톡"];
 // 탭별 지표 용어 (팔로워/좋아요에 해당하는 각 플랫폼 용어)
@@ -82,12 +88,18 @@ const faqs = [
   },
 ];
 
-function ImageBox({ className = "" }: { className?: string }) {
+function ImageBox({ src, className = "" }: { src: string; className?: string }) {
   return (
     <div
       className={`relative flex h-[360px] items-center justify-center overflow-hidden rounded-2xl bg-soft ${className}`}
     >
-      <div className="h-[72%] w-[55%] rounded-lg bg-white shadow-[8px_8px_16px_rgba(0,0,0,0.12)]" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="max-h-[88%] w-auto rounded-lg object-contain shadow-[8px_8px_16px_rgba(0,0,0,0.12)]"
+      />
     </div>
   );
 }
@@ -143,22 +155,18 @@ export default function ServiceGuide() {
               {platform} 마케팅으로 비즈니스 성장을 시작하세요
             </p>
           </div>
-          {/* 카드 일러스트: 순서대로 에셋 적용, 없는 카드는 플랫폼 아이콘 폴백 */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {serviceCards.map((c, i) => (
               <div key={c.title} className="overflow-hidden rounded-xl">
                 <div className="flex h-[248px] items-center justify-center bg-navy">
-                  {i === 0 ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src="/banners/서비스안내상단배너아이콘1.png"
-                      alt=""
-                      aria-hidden
-                      className="h-[172px] w-auto object-contain"
-                    />
-                  ) : (
-                    platformIcons[platform]
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cardImages[i].src}
+                    alt=""
+                    aria-hidden
+                    className="w-auto object-contain"
+                    style={{ height: cardImages[i].h }}
+                  />
                 </div>
                 <div className="flex flex-col gap-4 bg-soft p-7">
                   <h3 className="text-[22px] font-semibold leading-8 text-navy">
@@ -194,7 +202,7 @@ export default function ServiceGuide() {
                 </div>
               </div>
             );
-            const Image = <ImageBox className="w-full lg:w-1/2" />;
+            const Image = <ImageBox src={effectImages[i]} className="w-full lg:w-1/2" />;
             return (
               <div
                 key={e.label}
