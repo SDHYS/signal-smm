@@ -22,7 +22,7 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const [user, products, latestOrder] = await Promise.all([
+  const [user, products, latestOrder, siteNameRow] = await Promise.all([
     getCurrentUser(),
     prisma.product.findMany({
       where: { isActive: true },
@@ -47,6 +47,7 @@ export default async function Home({
         items: { take: 1, select: { productName: true, quantity: true } },
       },
     }),
+    prisma.setting.findUnique({ where: { key: "site_name" } }),
   ]);
 
   const ticker = latestOrder
@@ -57,7 +58,7 @@ export default async function Home({
 
   return (
     <div className="flex flex-col gap-8 pt-2">
-      <HeroSection />
+      <HeroSection siteName={siteNameRow?.value ?? "SIGNAL SMM"} />
       <OrderIntro ticker={ticker} />
       <OrderFlow
         isLoggedIn={!!user}

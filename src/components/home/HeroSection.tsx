@@ -49,7 +49,7 @@ const cards: Card[] = [
   },
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ siteName }: { siteName: string }) {
   return (
     <section className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
@@ -57,7 +57,7 @@ export default function HeroSection() {
           인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!
         </p>
         <h1 className="text-[40px] font-bold leading-[1.3]">
-          <span className="text-orange">시그널 에스엔에스</span>
+          <span className="text-orange">{siteName}</span>
           <span className="text-navy">에 오신것을 환영합니다!</span>
         </h1>
       </div>

@@ -35,7 +35,7 @@ export default async function SiteLayout({
 
   return (
     <div className="flex min-h-screen bg-white">
-      <Sidebar user={user} siteName={siteNameRow?.value ?? "SignalSMM"} />
+      <Sidebar user={user} siteName={siteNameRow?.value ?? "SIGNAL SMM"} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar user={user} notifications={notifications} unreadCount={unreadCount} />
         <main className="mx-auto w-full max-w-[1380px] px-4 pb-24 sm:px-8">

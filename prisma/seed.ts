@@ -24,7 +24,7 @@ async function main() {
 
   // 입금 계좌 등 사이트 설정
   const settings: Record<string, string> = {
-    site_name: "SignalSMM",
+    site_name: "SIGNAL SMM",
     bank_name: "국민은행",
     bank_account: "000000-00-000000",
     bank_holder: "(주)시그널",
