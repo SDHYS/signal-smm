@@ -112,3 +112,9 @@ export async function getOrdersStatus(
 export async function getBalance(): Promise<{ balance: string; currency: string }> {
   return call<{ balance: string; currency: string }>({ action: "balance" });
 }
+
+/** 발주 취소 요청 (지원 서비스 한정, best-effort) — 건별 성공/실패 배열 반환 */
+export async function cancelOrders(ids: string[]): Promise<unknown> {
+  if (ids.length === 0) return [];
+  return call<unknown>({ action: "cancel", orders: ids.slice(0, 100).join(",") });
+}

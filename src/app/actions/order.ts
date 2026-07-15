@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { dispatchOrder } from "@/lib/dispatch";
+import { cancelOrders, smmConfigured } from "@/lib/smm";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
 
@@ -253,6 +254,20 @@ export async function refundOrder(id: string): Promise<OrderResult> {
       return { ok: false, error: "환불할 수 없는 상태의 주문입니다." };
     console.error("refundOrder failed", e);
     return { ok: false, error: "환불 처리 중 오류가 발생했습니다." };
+  }
+
+  // 도매에 이미 발주된 건이면 취소 요청 (best-effort — 미지원 서비스는 실패해도 무방)
+  if (smmConfigured()) {
+    try {
+      const items = await prisma.orderItem.findMany({
+        where: { orderId: id, providerOrderId: { not: null } },
+        select: { providerOrderId: true },
+      });
+      if (items.length > 0)
+        await cancelOrders(items.map((i) => i.providerOrderId!));
+    } catch (e) {
+      console.error("refundOrder: provider cancel failed", { orderId: id }, e);
+    }
   }
 
   await notify(order.userId, {

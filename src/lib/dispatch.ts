@@ -16,6 +16,9 @@ export type DispatchResult = {
  *   실패 사유를 providerError에 남겨 관리자 재발주 대상으로 표시한다.
  */
 export async function dispatchOrderItem(itemId: string): Promise<DispatchResult> {
+  // 로컬 개발/테스트에서 실도매 발주가 나가지 않도록 하는 안전 스위치
+  // (.env에 SMM_DISPATCH_DISABLED=1 — 운영 Vercel에는 미설정)
+  if (process.env.SMM_DISPATCH_DISABLED === "1") return { ok: true, skipped: true };
   if (!smmConfigured()) return { ok: true, skipped: true };
 
   const item = await prisma.orderItem.findUnique({
