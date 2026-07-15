@@ -5,6 +5,9 @@ import AdminProducts, {
 } from "@/components/admin/AdminProducts";
 import { getBalance, getServices, smmConfigured, usdKrw } from "@/lib/smm";
 
+// 빌드 타임 프리렌더에서 도매 API를 호출하지 않도록 요청 시 렌더 고정
+export const dynamic = "force-dynamic";
+
 export default async function AdminProductsPage() {
   const rows = await prisma.product.findMany({
     orderBy: { sortOrder: "asc" },
