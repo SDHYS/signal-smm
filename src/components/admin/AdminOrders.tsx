@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { setOrderStatus, refundOrder, setOrderMemo, redispatchOrder } from "@/app/actions/order";
+import { setOrderStatus, refundOrder, setOrderMemo, redispatchOrder, syncOrdersAction } from "@/app/actions/order";
 
 export type AdminOrder = {
   id: string;
@@ -212,14 +212,39 @@ export default function AdminOrders({
     return s ? `/admin/orders?${s}` : "/admin/orders";
   };
 
+  const router = useRouter();
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  async function syncNow() {
+    setSyncing(true);
+    setSyncMsg(null);
+    const res = await syncOrdersAction();
+    setSyncing(false);
+    setSyncMsg(res.ok ? (res.summary ?? "동기화 완료") : (res.error ?? "동기화 실패"));
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-navy">주문 관리</h1>
-        <p className="text-base text-gray">
-          {query ? `"${query}" 검색 · ` : ""}
-          {activeStatus === "ALL" ? "전체" : STATUS[activeStatus as AdminOrder["status"]]?.label} {filteredCount}건
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-navy">주문 관리</h1>
+          <p className="text-base text-gray">
+            {query ? `"${query}" 검색 · ` : ""}
+            {activeStatus === "ALL" ? "전체" : STATUS[activeStatus as AdminOrder["status"]]?.label} {filteredCount}건
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={syncNow}
+            disabled={syncing}
+            className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-medium text-navy transition hover:bg-soft disabled:opacity-50"
+          >
+            {syncing ? "동기화 중..." : "도매 상태 동기화"}
+          </button>
+          {syncMsg && <span className="text-xs text-gray">{syncMsg}</span>}
+        </div>
       </div>
 
       {/* 검색 */}

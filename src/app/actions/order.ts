@@ -129,6 +129,30 @@ export async function redispatchOrder(id: string): Promise<OrderResult> {
   return { ok: true };
 }
 
+// ── 관리자: 도매 상태 수동 동기화 ─────────────────────
+export async function syncOrdersAction(): Promise<
+  OrderResult & { summary?: string }
+> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, error: "권한이 없습니다." };
+
+  try {
+    const { syncProviderOrders } = await import("@/lib/sync-orders");
+    const r = await syncProviderOrders();
+    revalidatePath("/admin/orders");
+    revalidatePath("/orders");
+    if ("skipped" in r) return { ok: false, error: r.skipped };
+    return {
+      ok: true,
+      summary: `확인 ${r.checked}건 — 진행 ${r.processing} · 완료 ${r.completed} · 부분 ${r.partial} · 취소 ${r.cancelled} · 오류 ${r.errors}`,
+    };
+  } catch (e) {
+    console.error("syncOrdersAction failed", e);
+    return { ok: false, error: "동기화 중 오류가 발생했습니다." };
+  }
+}
+
 // ── 관리자: 주문 상태 변경 ────────────────────────────
 type OrderStatus = "PAID" | "PROCESSING" | "COMPLETED";
 
