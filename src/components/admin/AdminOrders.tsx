@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { setOrderStatus, refundOrder, setOrderMemo } from "@/app/actions/order";
+import { setOrderStatus, refundOrder, setOrderMemo, redispatchOrder } from "@/app/actions/order";
 
 export type AdminOrder = {
   id: string;
@@ -15,6 +15,11 @@ export type AdminOrder = {
   productName: string;
   quantity: number;
   targetUrl: string | null;
+  providerOrderId: string | null;
+  providerStatus: string | null;
+  providerRemains: number | null;
+  providerError: string | null;
+  providerLinked: boolean;
   adminMemo: string;
   createdAt: string;
 };
@@ -94,6 +99,22 @@ function Row({ o }: { o: AdminOrder }) {
               링크: {o.targetUrl}
             </a>
           )}
+          {/* 도매 발주 상태 */}
+          {o.providerOrderId ? (
+            <span className="text-xs text-gray">
+              도매 발주 <span className="font-medium text-navy">#{o.providerOrderId}</span>
+              {o.providerStatus && <> · {o.providerStatus}</>}
+              {o.providerRemains !== null && o.providerRemains > 0 && (
+                <> · 잔여 {o.providerRemains.toLocaleString()}개</>
+              )}
+            </span>
+          ) : o.providerError ? (
+            <span className="text-xs font-medium text-[#ED1C24]">
+              발주 실패: {o.providerError.slice(0, 80)}
+            </span>
+          ) : o.providerLinked && o.status !== "CANCELLED" ? (
+            <span className="text-xs font-medium text-orange">미발주 (연동 상품)</span>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {o.status === "PAID" && (
@@ -114,6 +135,18 @@ function Row({ o }: { o: AdminOrder }) {
               완료로
             </button>
           )}
+          {o.providerLinked &&
+            !o.providerOrderId &&
+            o.status !== "CANCELLED" &&
+            o.status !== "COMPLETED" && (
+              <button
+                onClick={() => act(() => redispatchOrder(o.id))}
+                disabled={busy}
+                className="rounded bg-orange px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+              >
+                {o.providerError ? "재발주" : "발주"}
+              </button>
+            )}
           <Link
             href={`/orders/receipt/${o.id}`}
             className="rounded border border-line px-3 py-2 text-xs font-medium text-navy transition hover:bg-soft"

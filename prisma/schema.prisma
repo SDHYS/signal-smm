@@ -74,6 +74,10 @@ model Product {
   minQty      Int         @default(1)
   maxQty      Int         @default(100000)
   isActive    Boolean     @default(true)
+  // 도매(공급사) 연동 — 매핑되면 주문 시 자동 발주
+  providerServiceId Int? // 공급사 서비스 ID
+  providerRate      Float? // 매핑 시점 도매 단가 스냅샷 (USD/1000)
+  providerMeta      String? @db.Text // 공급사 서비스명·min/max 등 스냅샷(JSON)
   sortOrder   Int         @default(0)
   orderItems  OrderItem[]
   favorites   Favorite[]
@@ -130,8 +134,16 @@ model OrderItem {
   quantity    Int
   subtotal    Int // unitPrice * quantity
   targetUrl   String? // 작업 대상 링크(게시물/계정 URL)
+  // 도매(공급사) 발주 상태
+  providerOrderId String? // 공급사 주문번호
+  providerStatus  String? // Pending | In progress | Completed | Partial | Canceled ...
+  providerRemains Int? // 미완료 잔여 수량 (Partial 시 환불 계산용)
+  providerError   String? @db.Text // 발주 실패 사유 (재발주 대상 표시)
+  sentAt          DateTime? // 발주 시각
+  syncedAt        DateTime? // 마지막 상태 동기화 시각
 
   @@index([orderId])
+  @@index([providerOrderId])
   @@map("order_items")
 }
 

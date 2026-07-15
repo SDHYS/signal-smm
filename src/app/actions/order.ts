@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { dispatchOrder } from "@/lib/dispatch";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
 
@@ -53,6 +54,7 @@ export async function createOrder(input: {
   // 같은 밀리초에 동시 주문이 몰려도 충돌하지 않도록 난수 폭 확보
   const orderNo = `${Date.now()}${Math.floor(Math.random() * 900000 + 100000)}`;
 
+  let createdOrderId: string | null = null;
   try {
     await prisma.$transaction(async (tx) => {
       // 잔액 차감(잔액 충분할 때만) — 동시성 방지
@@ -62,7 +64,7 @@ export async function createOrder(input: {
       });
       if (dec.count === 0) throw new Error("INSUFFICIENT");
 
-      await tx.order.create({
+      const created = await tx.order.create({
         data: {
           orderNo,
           clientKey,
@@ -82,6 +84,7 @@ export async function createOrder(input: {
           },
         },
       });
+      createdOrderId = created.id;
     });
   } catch (e) {
     if (e instanceof Error && e.message === "INSUFFICIENT")
@@ -98,9 +101,32 @@ export async function createOrder(input: {
     return { ok: false, error: "주문 처리 중 오류가 발생했습니다." };
   }
 
+  // 도매 자동 발주 — 실패해도 주문은 유효 (관리자가 재발주)
+  if (createdOrderId) {
+    try {
+      await dispatchOrder(createdOrderId);
+    } catch (e) {
+      console.error("createOrder: dispatch failed", { orderId: createdOrderId }, e);
+    }
+  }
+
   revalidatePath("/orders");
   revalidatePath("/");
   return { ok: true, orderNo };
+}
+
+// ── 관리자: 발주/재발주 ───────────────────────────────
+export async function redispatchOrder(id: string): Promise<OrderResult> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, error: "권한이 없습니다." };
+
+  const res = await dispatchOrder(id);
+  revalidatePath("/admin/orders");
+  if (!res.ok) return { ok: false, error: res.error };
+  if (res.skipped)
+    return { ok: false, error: "도매 미연동 상품이거나 API 키가 없습니다." };
+  return { ok: true };
 }
 
 // ── 관리자: 주문 상태 변경 ────────────────────────────

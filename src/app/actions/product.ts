@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getServices, smmConfigured } from "@/lib/smm";
 
 export type Result = { ok: boolean; error?: string };
 
@@ -48,6 +49,59 @@ export async function createProduct(input: {
   });
 
   revalidatePath("/");
+  revalidatePath("/admin/products");
+  return { ok: true };
+}
+
+// 도매(공급사) 서비스 매핑 — serviceId가 null이면 연동 해제
+export async function setProviderService(
+  productId: string,
+  serviceId: number | null,
+): Promise<Result> {
+  if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
+
+  if (serviceId === null) {
+    await prisma.product.update({
+      where: { id: productId },
+      data: { providerServiceId: null, providerRate: null, providerMeta: null },
+    });
+    revalidatePath("/admin/products");
+    return { ok: true };
+  }
+
+  if (!smmConfigured())
+    return { ok: false, error: "SMM_API_KEY가 설정되지 않았습니다." };
+  if (!Number.isSafeInteger(serviceId) || serviceId <= 0)
+    return { ok: false, error: "서비스 ID가 올바르지 않습니다." };
+
+  // 실존하는 서비스인지 도매 목록에서 검증 후 스냅샷 저장
+  let svc;
+  try {
+    svc = (await getServices()).find((s) => s.service === serviceId);
+  } catch (e) {
+    console.error("setProviderService: getServices failed", e);
+    return { ok: false, error: "도매 API 조회에 실패했습니다. 잠시 후 다시 시도해주세요." };
+  }
+  if (!svc) return { ok: false, error: `도매에 없는 서비스 ID입니다: ${serviceId}` };
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      providerServiceId: serviceId,
+      providerRate: Number(svc.rate) || 0,
+      providerMeta: JSON.stringify({
+        name: svc.name,
+        category: svc.category,
+        min: Number(svc.min),
+        max: Number(svc.max),
+        type: svc.type,
+        refill: svc.refill,
+        cancel: svc.cancel,
+        mappedAt: new Date().toISOString(),
+      }),
+    },
+  });
+
   revalidatePath("/admin/products");
   return { ok: true };
 }

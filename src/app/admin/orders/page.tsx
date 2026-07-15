@@ -38,7 +38,19 @@ export default async function AdminOrdersPage({
       take: PAGE_SIZE,
       include: {
         user: { select: { username: true, name: true } },
-        items: { take: 1, select: { productName: true, quantity: true, targetUrl: true } },
+        items: {
+          take: 1,
+          select: {
+            productName: true,
+            quantity: true,
+            targetUrl: true,
+            providerOrderId: true,
+            providerStatus: true,
+            providerRemains: true,
+            providerError: true,
+            product: { select: { providerServiceId: true } },
+          },
+        },
       },
     }),
     prisma.order.count({ where }),
@@ -75,6 +87,11 @@ export default async function AdminOrdersPage({
     productName: o.items[0]?.productName ?? "주문",
     quantity: o.items[0]?.quantity ?? 0,
     targetUrl: o.items[0]?.targetUrl ?? null,
+    providerOrderId: o.items[0]?.providerOrderId ?? null,
+    providerStatus: o.items[0]?.providerStatus ?? null,
+    providerRemains: o.items[0]?.providerRemains ?? null,
+    providerError: o.items[0]?.providerError ?? null,
+    providerLinked: o.items[0]?.product?.providerServiceId != null,
     adminMemo: o.adminMemo ?? "",
     createdAt: o.createdAt.toISOString(),
   }));
