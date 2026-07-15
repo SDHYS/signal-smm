@@ -56,3 +56,6 @@ next-env.d.ts
 
 # Playwright 인증 세션(로컬 생성)
 tests/e2e/.auth
+
+# 외부 API 자격증명 (평문 키 — 절대 커밋 금지)
+smm-api.txt
