@@ -161,11 +161,17 @@ test("회원 풀 여정 — 가입부터 환불·비번변경까지", async ({ p
     await expect(page.getByText("거래명세서").first()).toBeVisible();
   });
 
-  await test.step("⑨ 알림 — 충전완료 알림 수신 + 모두 읽음", async () => {
+  await test.step("⑨ 알림 — 드롭다운→전체보기 페이지→모두 읽음", async () => {
     await page.goto("/");
     await page.getByRole("button", { name: "내 알림" }).click();
     await expect(page.getByText(/충전 완료/).first()).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "모두 읽음" }).click();
+    // 전체 보기 → 알림 페이지
+    await page.getByRole("link", { name: "전체 보기" }).click();
+    await page.waitForURL("**/notifications");
+    await expect(page.getByRole("heading", { name: "알림" })).toBeVisible();
+    await expect(page.getByText(/충전 완료/).first()).toBeVisible();
+    await page.getByRole("button", { name: /모두 읽음/ }).click();
+    await expect(page.getByRole("button", { name: /모두 읽음/ })).toHaveCount(0, { timeout: 10_000 });
   });
 
   await test.step("⑩ 1:1 문의 작성 → 관리자 답변 → 사용자 확인", async () => {

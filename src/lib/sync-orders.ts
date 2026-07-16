@@ -23,6 +23,11 @@ export type SyncSummary = {
  *
  * 환불은 주문 상태 전이(updateMany 가드)에 묶여 있어 중복 실행돼도
  * 잔액이 두 번 반영되지 않는다.
+ *
+ * ※ 불변식: 주문당 발주 아이템은 1건 (createOrder가 단일 아이템만 생성).
+ *   부분/전액 환불이 주문 상태에 묶여 있어 이 불변식에 의존한다. 다중 아이템
+ *   주문을 도입하려면 환불을 아이템 단위로 재설계해야 하며, 아래 가드가
+ *   그 전까지 잘못된 정산을 막는다(다중 발주 아이템 주문은 자동 처리에서 제외).
  */
 export async function syncProviderOrders(): Promise<SyncSummary | { skipped: string }> {
   if (!smmConfigured()) return { skipped: "SMM_API_KEY 미설정" };
@@ -33,7 +38,17 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
       providerOrderId: { not: null },
       order: { status: { in: ["PAID", "PROCESSING"] } },
     },
-    include: { order: { select: { id: true, orderNo: true, userId: true, status: true } } },
+    include: {
+      order: {
+        select: {
+          id: true,
+          orderNo: true,
+          userId: true,
+          status: true,
+          _count: { select: { items: true } },
+        },
+      },
+    },
     orderBy: { sentAt: "asc" },
     take: 100,
   });
@@ -46,6 +61,22 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
   for (const item of items) {
     const st = statuses[item.providerOrderId!];
     if (!st) continue;
+
+    // 불변식 가드: 다중 아이템 주문은 주문 단위 환불이 오정산되므로 자동 처리에서 제외
+    if (item.order._count.items > 1) {
+      summary.errors++;
+      console.error("syncProviderOrders: 다중 아이템 주문 자동 정산 제외", {
+        orderId: item.order.id,
+        items: item.order._count.items,
+      });
+      await prisma.orderItem
+        .update({
+          where: { id: item.id },
+          data: { syncedAt: new Date(), providerError: "다중 아이템 주문 — 관리자 수동 처리 필요" },
+        })
+        .catch(() => {});
+      continue;
+    }
 
     if ("error" in st) {
       summary.errors++;

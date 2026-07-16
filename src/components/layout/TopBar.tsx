@@ -248,6 +248,13 @@ export default function TopBar({
                           ))
                         )}
                       </div>
+                      <Link
+                        href="/notifications"
+                        onClick={() => setBellOpen(false)}
+                        className="block border-t border-line px-4 py-3 text-center text-sm font-medium text-navy transition hover:bg-soft/60"
+                      >
+                        전체 보기
+                      </Link>
                     </div>
                   </>
                 )}

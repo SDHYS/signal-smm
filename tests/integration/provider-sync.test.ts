@@ -42,7 +42,18 @@ function stubSmm(handler: SmmHandler) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(async () => {
+  vi.unstubAllGlobals();
+  // sync는 전역 PAID/PROCESSING 주문을 처리하므로, 각 테스트가 남긴 미완료 발주건이
+  // 다음 테스트의 sync에 새어들지 않도록 이 스위트 소유 주문을 종결 처리한다.
+  await prisma.order.updateMany({
+    where: {
+      userId: { in: userIds },
+      status: { in: ["PAID", "PROCESSING"] },
+    },
+    data: { status: "COMPLETED" },
+  });
+});
 
 // ── 픽스처 ────────────────────────────────────────────
 async function makeUser(balance = 0, role = "USER") {
@@ -246,6 +257,43 @@ describe("상태 동기화 (syncProviderOrders)", () => {
     expect(order?.adminMemo).toContain("부분완료");
     const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
     expect(item?.providerRemains).toBe(30);
+  });
+
+  it("다중 아이템 주문 → 자동 정산 제외(오정산 방지), 잔액·상태 불변", async () => {
+    const u = await makeUser(0);
+    const p = await makeProduct(4189);
+    // 발주 아이템 2개인 주문을 직접 구성
+    const o = await prisma.order.create({
+      data: {
+        orderNo: `${PREFIX}_multi_${Math.random().toString(36).slice(2, 8)}`,
+        userId: u.id,
+        status: "PAID",
+        totalAmount: 2000,
+        paidAt: new Date(),
+        items: {
+          create: [
+            { productId: p.id, productName: "A", unitPrice: 100, quantity: 10, subtotal: 1000, targetUrl: "https://x.com/a", providerOrderId: "M1", providerStatus: "Pending", sentAt: new Date() },
+            { productId: p.id, productName: "B", unitPrice: 100, quantity: 10, subtotal: 1000, targetUrl: "https://x.com/b", providerOrderId: "M2", providerStatus: "Pending", sentAt: new Date() },
+          ],
+        },
+      },
+    });
+    // 2건 조회는 맵 형태 응답 — M1/M2 각각에 상태 부여
+    stubSmm((action) =>
+      action === "status" ? { M1: { status: "Canceled" }, M2: { status: "Canceled" } } : {},
+    );
+
+    await syncProviderOrders();
+
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(0); // 자동 환불 안 함 (관리자 수동 처리 대상)
+    const order = await prisma.order.findUnique({ where: { id: o.id } });
+    expect(order?.status).toBe("PAID"); // 상태 불변
+    const items = await prisma.orderItem.findMany({ where: { orderId: o.id } });
+    expect(items.every((i) => i.providerError?.includes("다중 아이템"))).toBe(true);
+    // 정리
+    await prisma.orderItem.deleteMany({ where: { orderId: o.id } });
+    await prisma.order.delete({ where: { id: o.id } });
   });
 
   it("Partial remains가 주문수량 초과 → 주문수량으로 클램프(과다환불 차단)", async () => {
