@@ -56,6 +56,8 @@ export const COPY_SECTIONS: CopySection[] = [
       { key: "step05_title", label: "STEP05 제목", default: "구매 수량을 입력해주세요." },
       { key: "step06_title", label: "STEP06 제목", default: "주문금액" },
       { key: "order_footnote", label: "주문 버튼 아래 문구", default: "주문 시 보유잔액에서 즉시 차감됩니다." },
+      { key: "inquiry_only_title", label: "문의전용 플랫폼 안내 제목", default: "{플랫폼} 서비스는 별도 문의로 진행됩니다", hint: "{플랫폼}이 선택한 플랫폼명으로 치환됩니다. 상품이 없는 플랫폼 선택 시 표시." },
+      { key: "inquiry_only_desc", label: "문의전용 플랫폼 안내 본문", textarea: true, default: "해당 플랫폼은 계정·상품 상황에 따라 맞춤 견적으로 안내드리고 있습니다.\n1:1 문의를 남겨주시면 확인 후 빠르게 답변드리겠습니다." },
       { key: "category1", label: "STEP02 필터1 라벨", default: "일반" },
       { key: "category2", label: "STEP02 필터2 라벨 (팔로워류)", default: "팔로워", hint: "라벨만 바뀌고 필터 동작은 유지됩니다." },
       { key: "category3", label: "STEP02 필터3 라벨 (연령/성별류)", default: "연령별 / 성별", hint: "라벨만 바뀌고 필터 동작은 유지됩니다." },

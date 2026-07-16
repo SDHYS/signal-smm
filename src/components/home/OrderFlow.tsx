@@ -129,6 +129,14 @@ export default function OrderFlow({
 
   const step02Label = selectedPlatform?.name ?? "전체 서비스";
 
+  // 판매 상품이 없는 실제 플랫폼(도매 조달 불가 등) → 주문 UI 대신 1:1 문의 유도.
+  // 서버(createOrder)는 실존·활성 상품만 허용하므로 이 분기는 안내용이며,
+  // 관리자가 해당 카테고리 상품을 활성화하면 자동으로 일반 주문 모드로 전환된다.
+  const inquiryOnly =
+    !!selectedPlatform &&
+    !META_TILES.has(selectedPlatform.name) &&
+    !products.some((p) => p.category === selectedPlatform.name);
+
   async function handleOrder() {
     setError(null);
     if (!isLoggedIn) return setError("로그인 후 주문할 수 있습니다.");
@@ -260,6 +268,34 @@ export default function OrderFlow({
             </button>
           </div>
 
+          {inquiryOnly && selectedPlatform ? (
+            /* 문의 전용 플랫폼 — 주문 불가 안내 */
+            <div className="flex flex-col items-start gap-5 rounded-2xl bg-soft p-8 sm:p-10">
+              <div className="flex flex-col gap-2">
+                <p className="text-lg font-semibold text-navy">
+                  {copy.inquiry_only_title.replaceAll("{플랫폼}", selectedPlatform.name)}
+                </p>
+                <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                  {copy.inquiry_only_desc}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/inquiry/write"
+                  className="rounded-lg bg-orange px-8 py-4 text-base font-medium text-white transition hover:brightness-95"
+                >
+                  1:1 문의하기
+                </Link>
+                <Link
+                  href="/support"
+                  className="rounded-lg bg-white px-8 py-4 text-base font-medium text-gray outline outline-1 outline-line transition hover:text-navy"
+                >
+                  고객센터
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* 카테고리 탭 — 상품명 기준 필터 */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {categories.map((c, i) => {
@@ -352,9 +388,13 @@ export default function OrderFlow({
               </p>
             </div>
           )}
+            </>
+          )}
         </div>
       </section>
 
+      {!inquiryOnly && (
+        <>
       {/* STEP 03 — 상세 설명 (탭별 내용) */}
       <section className="flex flex-col gap-7">
         <StepHeader step="STEP 03" title={copy.step03_title} />
@@ -505,6 +545,8 @@ export default function OrderFlow({
           {copy.order_footnote}
         </p>
       </div>
+        </>
+      )}
     </div>
   );
 }

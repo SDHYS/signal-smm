@@ -99,3 +99,30 @@ test("한글 줄바꿈 — 단어 중간에서 꺾이지 않음 (keep-all)", asy
   );
   expect(wordBreak).toBe("keep-all");
 });
+
+test("문의전용 플랫폼(카카오) — 주문 UI 차단 + 1:1 문의 유도", async ({ page }) => {
+  await page.goto("/");
+  await tile(page, "카카오").click();
+  // 안내 카드 노출
+  await expect(page.getByText(/카카오 서비스는 별도 문의로 진행됩니다/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "1:1 문의하기" })).toHaveAttribute("href", "/inquiry/write");
+  // 주문 UI 전부 차단 (STEP04~06 + 주문하기 버튼)
+  await expect(page.getByRole("button", { name: "주문하기" })).toHaveCount(0);
+  await expect(page.getByPlaceholder("게시물 링크를 입력해주세요")).toHaveCount(0);
+  await expect(page.getByText("STEP 06")).toHaveCount(0);
+
+  // 상품 있는 플랫폼(페이스북) 선택 → 정상 주문 모드 복귀
+  await tile(page, "페이스북").click();
+  await expect(row(page, "페이스북 페이지 팔로워").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "주문하기" })).toBeVisible();
+});
+
+test("신규 플랫폼(네이버·텔레그램·X) — 상품 노출 확인", async ({ page }) => {
+  await page.goto("/");
+  await tile(page, "네이버").click();
+  await expect(row(page, "네이버 검색 유입 트래픽").first()).toBeVisible();
+  await tile(page, "텔레그램").click();
+  await expect(row(page, "텔레그램 채널 멤버").first()).toBeVisible();
+  await tile(page, "X트위터").click();
+  await expect(row(page, "X\\(트위터\\) 팔로워").first()).toBeVisible();
+});

@@ -44,6 +44,15 @@ async function main() {
     { category: "유튜브", name: "유튜브 조회수", unitPrice: 15, minQty: 100, maxQty: 1000000, sortOrder: 3 },
     { category: "유튜브", name: "유튜브 구독자", unitPrice: 200, minQty: 10, maxQty: 50000, sortOrder: 4 },
     { category: "틱톡", name: "틱톡 팔로워", unitPrice: 90, minQty: 10, maxQty: 100000, sortOrder: 5 },
+    { category: "페이스북", name: "페이스북 페이지 팔로워", unitPrice: 70, minQty: 20, maxQty: 50000, sortOrder: 6 },
+    { category: "페이스북", name: "페이스북 게시물 좋아요", unitPrice: 25, minQty: 20, maxQty: 50000, sortOrder: 7 },
+    { category: "텔레그램", name: "텔레그램 채널 멤버", unitPrice: 50, minQty: 50, maxQty: 50000, sortOrder: 8 },
+    { category: "텔레그램", name: "텔레그램 게시물 조회수", unitPrice: 5, minQty: 100, maxQty: 1000000, sortOrder: 9 },
+    { category: "X트위터", name: "X(트위터) 팔로워", unitPrice: 90, minQty: 20, maxQty: 50000, sortOrder: 10 },
+    { category: "X트위터", name: "X(트위터) 좋아요", unitPrice: 30, minQty: 20, maxQty: 50000, sortOrder: 11 },
+    { category: "네이버", name: "네이버 검색 유입 트래픽", unitPrice: 5, minQty: 500, maxQty: 1000000, sortOrder: 12 },
+    { category: "네이버", name: "네이버 키워드 검색 유입", unitPrice: 7, minQty: 1000, maxQty: 1000000, sortOrder: 13 },
+    { category: "네이버블로그", name: "네이버 블로그 유입 트래픽", unitPrice: 5, minQty: 500, maxQty: 1000000, sortOrder: 14 },
   ];
   for (const p of products) {
     const existing = await prisma.product.findFirst({ where: { name: p.name } });
