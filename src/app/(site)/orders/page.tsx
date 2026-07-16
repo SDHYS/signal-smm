@@ -10,7 +10,7 @@ const STATUS_LABEL: Record<string, string> = {
   PAID: "결제완료",
   PROCESSING: "진행중",
   COMPLETED: "완료",
-  CANCELLED: "취소",
+  CANCELLED: "환불",
 };
 
 function dateKey(d: Date) {

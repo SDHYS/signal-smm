@@ -274,6 +274,11 @@ export default function SignupWizard({
               value={passwordConfirm}
               onChange={setPasswordConfirm}
             />
+            {passwordConfirm.length > 0 && password !== passwordConfirm && (
+              <p className="-mt-3 text-sm font-medium text-[#ED1C24]">
+                비밀번호가 일치하지 않습니다.
+              </p>
+            )}
           </div>
           <NavButtons
             onPrev={() => setStep(1)}

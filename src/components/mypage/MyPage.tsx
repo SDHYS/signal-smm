@@ -51,34 +51,39 @@ export default function MyPage({ info }: { info: MyInfo }) {
   const [phone, setPhone] = useState(info.phone ?? "");
   const [email, setEmail] = useState(info.email);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  type Msg = { ok: boolean; text: string } | null;
+  const [profileMsg, setProfileMsg] = useState<Msg>(null);
 
   // 비밀번호
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [nextConfirm, setNextConfirm] = useState("");
   const [savingPw, setSavingPw] = useState(false);
-  const [pwMsg, setPwMsg] = useState<string | null>(null);
+  const [pwMsg, setPwMsg] = useState<Msg>(null);
 
   async function saveProfile() {
     setProfileMsg(null);
     setSavingProfile(true);
     const res = await updateProfile({ name, phone, email });
     setSavingProfile(false);
-    setProfileMsg(res.ok ? "저장되었습니다." : (res.error ?? "저장 실패"));
+    setProfileMsg({ ok: res.ok, text: res.ok ? "저장되었습니다." : (res.error ?? "저장 실패") });
     if (res.ok) router.refresh();
   }
 
   async function savePassword() {
     setPwMsg(null);
+    if (next.length < 8) {
+      setPwMsg({ ok: false, text: "새 비밀번호는 8자 이상이어야 합니다." });
+      return;
+    }
     if (next !== nextConfirm) {
-      setPwMsg("새 비밀번호가 일치하지 않습니다.");
+      setPwMsg({ ok: false, text: "새 비밀번호가 일치하지 않습니다." });
       return;
     }
     setSavingPw(true);
     const res = await changePassword({ current, next });
     setSavingPw(false);
-    setPwMsg(res.ok ? "비밀번호가 변경되었습니다." : (res.error ?? "변경 실패"));
+    setPwMsg({ ok: res.ok, text: res.ok ? "비밀번호가 변경되었습니다." : (res.error ?? "변경 실패") });
     if (res.ok) {
       setCurrent("");
       setNext("");
@@ -132,7 +137,11 @@ export default function MyPage({ info }: { info: MyInfo }) {
             >
               {savingProfile ? "저장 중..." : "저장"}
             </button>
-            {profileMsg && <span className="text-sm text-gray">{profileMsg}</span>}
+            {profileMsg && (
+              <span className={`text-sm font-medium ${profileMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
+                {profileMsg.text}
+              </span>
+            )}
           </div>
         </div>
 
@@ -161,7 +170,11 @@ export default function MyPage({ info }: { info: MyInfo }) {
             >
               {savingPw ? "변경 중..." : "비밀번호 변경"}
             </button>
-            {pwMsg && <span className="text-sm text-gray">{pwMsg}</span>}
+            {pwMsg && (
+              <span className={`text-sm font-medium ${pwMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
+                {pwMsg.text}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -23,13 +23,31 @@ export async function dispatchOrderItem(itemId: string): Promise<DispatchResult>
 
   const item = await prisma.orderItem.findUnique({
     where: { id: itemId },
-    include: { product: { select: { providerServiceId: true } } },
+    include: {
+      product: { select: { providerServiceId: true } },
+      order: { select: { status: true } },
+    },
   });
   if (!item) return { ok: false, error: "주문 아이템을 찾을 수 없습니다." };
   if (item.providerOrderId) return { ok: true }; // 이미 발주됨 (멱등)
   if (!item.product.providerServiceId) return { ok: true, skipped: true };
   if (!item.targetUrl)
     return { ok: false, error: "주문 링크가 없어 발주할 수 없습니다." };
+  // 환불/취소·완료된 주문은 절대 발주하지 않는다 (환불 후 재발주로 도매비만 나가는 구멍 차단)
+  if (item.order.status !== "PAID" && item.order.status !== "PROCESSING")
+    return { ok: false, error: "발주 가능한 상태의 주문이 아닙니다." };
+
+  // 동시 발주 방지: addOrder(외부 과금) 전에 DB에서 "발주 중" 선점.
+  // sentAt 갱신을 원자 조건(providerOrderId: null, sentAt: null)으로 잠가,
+  // 두 번째 동시 호출은 count===0으로 즉시 빠져나가 addOrder를 호출하지 않는다.
+  const claim = await prisma.orderItem.updateMany({
+    where: { id: itemId, providerOrderId: null, sentAt: null },
+    data: { sentAt: new Date() },
+  });
+  if (claim.count === 0) {
+    // 다른 호출이 이미 선점(발주 진행 중) — 중복 발주 방지
+    return { ok: true, skipped: true };
+  }
 
   try {
     const providerOrderId = await addOrder({
@@ -37,24 +55,17 @@ export async function dispatchOrderItem(itemId: string): Promise<DispatchResult>
       link: item.targetUrl,
       quantity: item.quantity,
     });
-    // 동시 재발주 경합 방지 — 아직 미발주 상태일 때만 기록
-    const upd = await prisma.orderItem.updateMany({
-      where: { id: itemId, providerOrderId: null },
-      data: {
-        providerOrderId,
-        providerStatus: "Pending",
-        providerError: null,
-        sentAt: new Date(),
-      },
+    await prisma.orderItem.update({
+      where: { id: itemId },
+      data: { providerOrderId, providerStatus: "Pending", providerError: null },
     });
-    if (upd.count === 0)
-      console.error("dispatchOrderItem: 중복 발주 감지", { itemId, providerOrderId });
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("dispatchOrderItem failed", { itemId }, e);
+    // 실패 시 선점 해제(sentAt=null)해 관리자 재발주가 가능하도록 되돌린다
     await prisma.orderItem
-      .update({ where: { id: itemId }, data: { providerError: msg } })
+      .update({ where: { id: itemId }, data: { providerError: msg, sentAt: null } })
       .catch(() => {});
     return { ok: false, error: msg };
   }

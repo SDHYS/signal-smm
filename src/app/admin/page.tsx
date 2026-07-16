@@ -106,6 +106,11 @@ export default async function AdminPage() {
       accent: pendingInquiries > 0 ? "orange" : "navy",
       href: "/admin/inquiries",
     },
+    {
+      label: "전체 회원",
+      value: `${memberCount.toLocaleString()}명`,
+      href: "/admin/members",
+    },
   ];
 
   const charges: PendingCharge[] = pending.map((c) => ({

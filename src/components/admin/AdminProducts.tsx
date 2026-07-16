@@ -50,8 +50,6 @@ const categorySuggestions = [
   "네이버블로그",
 ];
 
-const won = (n: number) => `${n.toLocaleString()}원`;
-
 function parseMeta(meta: string | null): { name?: string; min?: number; max?: number } {
   if (!meta) return {};
   try {

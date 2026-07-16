@@ -84,7 +84,7 @@ export default function LoginForm({ copy }: { copy: Record<string, string> }) {
                     아이디찾기
                   </Link>
                   <span className="h-3 w-px bg-line" />
-                  <Link href="/find-id" className="hover:underline">
+                  <Link href="/find-id#password" className="hover:underline">
                     비밀번호 찾기
                   </Link>
                 </div>

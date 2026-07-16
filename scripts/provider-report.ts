@@ -95,7 +95,7 @@ async function main() {
     const typeKws = TYPE_KEYWORDS.find(([re]) => re.test(p.name))?.[1] ?? [];
     const korean = /한국인|한국/.test(p.name) ? ["korean", "한국"] : [];
 
-    let cands = services.filter((s) => {
+    const cands = services.filter((s) => {
       const h = hay(s);
       const n = s.name.toLowerCase();
       return (

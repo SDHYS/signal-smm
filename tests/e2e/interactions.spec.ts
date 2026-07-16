@@ -122,7 +122,24 @@ test("신규 플랫폼(네이버·텔레그램·X) — 상품 노출 확인", as
   await tile(page, "네이버").click();
   await expect(row(page, "네이버 검색 유입 트래픽").first()).toBeVisible();
   await tile(page, "텔레그램").click();
-  await expect(row(page, "텔레그램 채널 멤버").first()).toBeVisible();
+  await expect(row(page, "텔레그램 게시물 조회수").first()).toBeVisible();
   await tile(page, "X트위터").click();
   await expect(row(page, "X\\(트위터\\) 팔로워").first()).toBeVisible();
+});
+
+test("비밀번호 찾기 링크 → find-id 비밀번호 안내 섹션", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "비밀번호 찾기" }).click();
+  await page.waitForURL("**/find-id#password");
+  await expect(page.getByText("비밀번호를 잊으셨나요?")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "아이디·비밀번호 찾기" })).toBeVisible();
+});
+
+test("가입 2단계 — 비밀번호 불일치 인라인 경고", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByRole("button", { name: "전체동의" }).click();
+  await page.getByRole("button", { name: "다음" }).click();
+  await page.getByPlaceholder("8자 이상 입력").fill("password123");
+  await page.getByPlaceholder("비밀번호 재확인").fill("password999");
+  await expect(page.getByText("비밀번호가 일치하지 않습니다.")).toBeVisible();
 });

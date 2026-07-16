@@ -122,6 +122,11 @@ export async function redispatchOrder(id: string): Promise<OrderResult> {
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
+  // 주문 단위 rate limit — 따닥 클릭 시 이중 발주 시도 자체를 억제
+  // (dispatch 내부의 sentAt 선점 락이 최종 방어선, 여기는 1차 방어선)
+  if (!(await rateLimit("redispatch", { max: 1, windowMs: 10_000, key: id })))
+    return { ok: false, error: "잠시 후 다시 시도해주세요." };
+
   const res = await dispatchOrder(id);
   revalidatePath("/admin/orders");
   if (!res.ok) return { ok: false, error: res.error };

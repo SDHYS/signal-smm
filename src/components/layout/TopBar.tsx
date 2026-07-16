@@ -137,6 +137,7 @@ export default function TopBar({
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
+              aria-label="서비스 검색어"
               placeholder="서비스 검색 (예: 팔로워)"
               className="w-full bg-transparent text-sm text-navy placeholder:text-gray focus:outline-none"
             />
@@ -320,6 +321,7 @@ export default function TopBar({
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
+                aria-label="서비스 검색어"
                 placeholder="서비스 검색"
                 className="w-full bg-transparent text-sm text-navy placeholder:text-gray focus:outline-none"
               />

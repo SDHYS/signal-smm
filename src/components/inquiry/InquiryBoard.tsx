@@ -44,6 +44,7 @@ export default function InquiryBoard({
           <form method="GET" className="flex w-[380px] max-w-full items-center justify-between rounded-lg px-4 py-4 outline outline-1 outline-line/80">
             <input
               name="q"
+              aria-label="문의 검색어"
               defaultValue={q ?? ""}
               placeholder="검색어를 입력해주세요"
               className="w-full bg-transparent text-base font-normal text-navy placeholder:text-gray focus:outline-none"

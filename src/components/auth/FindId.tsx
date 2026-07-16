@@ -25,7 +25,7 @@ export default function FindId({ eyebrow }: { eyebrow: string }) {
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-8 pt-10">
       <div className="flex flex-col gap-2.5">
         <p className="text-base font-normal text-[#767676]">{eyebrow}</p>
-        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">아이디 찾기</h1>
+        <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">아이디·비밀번호 찾기</h1>
       </div>
 
       {/* 아이디 찾기 */}
@@ -60,7 +60,7 @@ export default function FindId({ eyebrow }: { eyebrow: string }) {
       </form>
 
       {/* 비밀번호 안내 */}
-      <div className="flex flex-col gap-3 rounded-2xl bg-soft p-8">
+      <div id="password" className="flex scroll-mt-20 flex-col gap-3 rounded-2xl bg-soft p-8">
         <p className="text-lg font-semibold text-navy">비밀번호를 잊으셨나요?</p>
         <p className="text-sm leading-6 text-gray">
           보안을 위해 비밀번호는 관리자 확인 후 초기화해드립니다.

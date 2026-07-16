@@ -174,8 +174,39 @@ describe("발주 (dispatchOrderItem)", () => {
     const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
     expect(item?.providerOrderId).toBeNull();
     expect(item?.providerError).toContain("Not enough funds");
+    expect(item?.sentAt).toBeNull(); // 실패 시 선점 해제 → 재발주 가능
     const order = await prisma.order.findUnique({ where: { id: o.id } });
     expect(order?.status).toBe("PAID"); // 주문은 살아있음 (재발주 대상)
+    await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
+  });
+
+  it("환불(CANCELLED)된 주문 → 발주 거부, 도매 호출 없음", async () => {
+    const u = await makeUser();
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10, status: "CANCELLED" });
+    stubSmm(() => ({ order: 55555 }));
+
+    const r = await dispatchOrderItem(o.items[0].id);
+    expect(r.ok).toBe(false);
+    expect(fetchCalls.length).toBe(0); // 도매 발주 절대 안 나감
+    const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
+    expect(item?.providerOrderId).toBeNull();
+  });
+
+  it("동시 발주 2건 → 도매 호출 1회, 한쪽은 스킵", async () => {
+    const u = await makeUser();
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 20 });
+    stubSmm(() => ({ order: 88888 }));
+
+    const [a, b] = await Promise.all([
+      dispatchOrderItem(o.items[0].id),
+      dispatchOrderItem(o.items[0].id),
+    ]);
+    expect([a.ok, b.ok].filter(Boolean).length).toBe(2); // 둘 다 성공 응답
+    expect(fetchCalls.length).toBe(1); // 실제 도매 발주는 1회만
+    const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
+    expect(item?.providerOrderId).toBe("88888");
     await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
   });
 });
@@ -215,6 +246,18 @@ describe("상태 동기화 (syncProviderOrders)", () => {
     expect(order?.adminMemo).toContain("부분완료");
     const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
     expect(item?.providerRemains).toBe(30);
+  });
+
+  it("Partial remains가 주문수량 초과 → 주문수량으로 클램프(과다환불 차단)", async () => {
+    const u = await makeUser(0);
+    const p = await makeProduct(4189);
+    // 10개 주문인데 공급사가 remains=9999 오응답 → 최대 10개(=1,000원)까지만 환불
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10, providerOrderId: "77099" });
+    stubSmm(() => ({ status: "Partial", remains: "9999" }));
+
+    await syncProviderOrders();
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(1_000); // 10 × 100원, 주문 총액 초과 불가
   });
 
   it("Canceled → 전액 환불 + 주문 취소", async () => {
