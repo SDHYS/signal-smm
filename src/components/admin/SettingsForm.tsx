@@ -60,6 +60,40 @@ const sections: Section[] = [
       },
     ],
   },
+  {
+    title: "사업자 정보",
+    desc: "사이트 하단(푸터)과 영수증·거래명세서에 표기됩니다. 전자상거래 법정 표기 사항입니다.",
+    fields: [
+      { key: "company_name", label: "상호", placeholder: "예: 주식회사 시그널" },
+      { key: "company_ceo", label: "대표자", placeholder: "예: 홍길동" },
+      { key: "company_bizno", label: "사업자등록번호", placeholder: "예: 123-45-67890" },
+      { key: "company_mailorder", label: "통신판매업신고번호", placeholder: "예: 제2026-서울강남-0000호" },
+      { key: "company_address", label: "사업장 주소", placeholder: "예: 서울특별시 강남구 …" },
+      { key: "company_email", label: "대표 이메일", placeholder: "예: contact@signalsmm.com" },
+    ],
+  },
+  {
+    title: "이용약관 · 개인정보처리방침",
+    desc: "가입 1단계와 푸터에서 열람됩니다. 비워두면 '준비 중' 안내가 표시됩니다.",
+    fields: [
+      { key: "terms_content", label: "이용약관 전문", textarea: true, placeholder: "제1조 (목적) …" },
+      { key: "privacy_content", label: "개인정보처리방침 전문", textarea: true, placeholder: "1. 수집하는 개인정보 항목 …" },
+    ],
+  },
+  {
+    title: "검색엔진(SEO) · 충전",
+    desc: "브라우저 탭 제목, 검색 결과 설명, 충전 금액 버튼을 설정합니다.",
+    fields: [
+      { key: "seo_title", label: "사이트 제목 (브라우저 탭)", placeholder: "예: SignalSMM — 소셜미디어 마케팅" },
+      { key: "seo_description", label: "사이트 설명 (검색 결과)", textarea: true, placeholder: "예: 인스타그램 팔로워, 유튜브, 틱톡 등 SNS 마케팅 서비스를 간편하게 주문하세요." },
+      {
+        key: "charge_presets",
+        label: "충전 금액 버튼 (쉼표 구분, 원)",
+        placeholder: "10000, 30000, 50000, 70000, 100000, 300000, 500000, 1000000",
+        hint: "예: 5000, 10000, 50000 — 잘못된 값은 무시되고 기본 버튼이 사용됩니다.",
+      },
+    ],
+  },
 ];
 
 export default function SettingsForm({

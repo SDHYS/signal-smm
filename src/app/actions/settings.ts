@@ -33,6 +33,8 @@ export async function updateSettings(
   revalidatePath("/support");
   revalidatePath("/about");
   revalidatePath("/guide");
+  revalidatePath("/terms");
+  revalidatePath("/privacy");
   revalidatePath("/", "layout"); // 사이트명·문구는 레이아웃/전 페이지에 반영
   return { ok: true };
 }

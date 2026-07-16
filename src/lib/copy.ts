@@ -125,6 +125,10 @@ export const COPY_SECTIONS: CopySection[] = [
     page: "/about",
     items: [
       { key: "about_eyebrow", label: "머리말", default: "SNS 마케팅 파트너" },
+      { key: "about_title", label: "페이지 제목", default: "회사 소개" },
+      { key: "about_heading_suffix", label: "소개 헤딩 (사이트명 뒤)", default: "는 SNS 마케팅의 모든 것을 제공합니다" },
+      { key: "about_values_title", label: "핵심가치 섹션 제목", default: "우리가 일하는 방식" },
+      { key: "about_ops_title", label: "운영 안내 제목", default: "운영 안내" },
       { key: "about_value1_title", label: "핵심가치1 제목", default: "빠른 처리" },
       { key: "about_value1_desc", label: "핵심가치1 설명", textarea: true, default: "주문 후 평균 5~20분 내 자동으로 작업이 시작됩니다. 24시간 언제든 주문할 수 있습니다." },
       { key: "about_value2_title", label: "핵심가치2 제목", default: "실사용자 품질" },

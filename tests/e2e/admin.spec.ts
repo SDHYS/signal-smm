@@ -126,4 +126,51 @@ test.describe("관리자(로그인 세션)", () => {
     await page.goto("/");
     await expect(page.getByText("인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!")).toBeVisible();
   });
+
+  test("사업자 정보 — 저장 시 푸터에 표기, 비우면 숨김", async ({ page }) => {
+    await page.goto("/admin/settings");
+    await page.getByLabel("상호").fill("주식회사 QA테스트");
+    await page.getByLabel("사업자등록번호").fill("123-45-67890");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+
+    await page.goto("/");
+    await expect(page.getByText(/상호 주식회사 QA테스트/)).toBeVisible();
+    await expect(page.getByText(/사업자등록번호 123-45-67890/)).toBeVisible();
+    // 푸터 약관 링크 동작
+    await page.getByRole("link", { name: "이용약관" }).click();
+    await page.waitForURL("**/terms");
+    await expect(page.getByRole("heading", { name: "이용약관" })).toBeVisible();
+
+    // 원복
+    await page.goto("/admin/settings");
+    await page.getByLabel("상호").fill("");
+    await page.getByLabel("사업자등록번호").fill("");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+    await page.goto("/");
+    await expect(page.getByText(/상호 주식회사 QA테스트/)).toHaveCount(0);
+  });
+
+  test("약관 본문 — 어드민 입력이 /terms에 반영, 가입 1단계 보기 링크", async ({ page }) => {
+    await page.goto("/admin/settings");
+    await page.getByLabel("이용약관 전문").fill("제1조 (목적) QA 약관 본문입니다.");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+
+    await page.goto("/terms");
+    await expect(page.getByText("제1조 (목적) QA 약관 본문입니다.")).toBeVisible();
+
+    // 가입 1단계 '보기' 링크 존재
+    await page.goto("/signup");
+    await expect(page.getByRole("link", { name: "보기" }).first()).toHaveAttribute("href", "/terms");
+
+    // 원복
+    await page.goto("/admin/settings");
+    await page.getByLabel("이용약관 전문").fill("");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+    await page.goto("/terms");
+    await expect(page.getByText("이용약관을 준비 중입니다.")).toBeVisible();
+  });
 });

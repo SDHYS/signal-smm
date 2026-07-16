@@ -38,15 +38,15 @@ export default async function AboutPage() {
           {copy.about_eyebrow}
         </p>
         <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
-          회사 소개
+          {copy.about_title}
         </h1>
       </div>
 
       {/* 소개 */}
       <section className="flex flex-col gap-6 rounded-2xl bg-soft p-10">
         <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
-          <span className="text-orange">{siteName}</span>는 SNS 마케팅의 모든 것을
-          제공합니다
+          <span className="text-orange">{siteName}</span>
+          {copy.about_heading_suffix}
         </h2>
         <p className="max-w-[900px] whitespace-pre-line text-lg font-normal leading-[30px] text-gray">
           {customIntro ||
@@ -57,7 +57,7 @@ export default async function AboutPage() {
       {/* 핵심 가치 */}
       <section className="flex flex-col gap-7">
         <h2 className="text-xl font-bold leading-7 sm:text-[26px] sm:leading-9 lg:text-[28px] lg:leading-[38px] text-navy">
-          우리가 일하는 방식
+          {copy.about_values_title}
         </h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {values.map((v) => (
@@ -77,7 +77,7 @@ export default async function AboutPage() {
       <section className="flex flex-col gap-6 rounded-2xl border border-line p-10">
         <div className="flex items-center gap-3">
           <Headset size={28} strokeWidth={1.5} className="text-navy" />
-          <h2 className="text-xl font-semibold text-navy">운영 안내</h2>
+          <h2 className="text-xl font-semibold text-navy">{copy.about_ops_title}</h2>
         </div>
         <p className="text-base font-normal leading-[26px] text-gray">
           {copy.about_ops}

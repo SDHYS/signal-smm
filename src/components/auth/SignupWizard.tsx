@@ -221,18 +221,36 @@ export default function SignupWizard() {
               className="flex items-center gap-3 rounded-lg border border-line px-4 py-5 text-left transition hover:bg-soft/40"
             >
               <RoundCheck checked={terms} />
-              <span className="text-sm font-medium text-black">
+              <span className="flex-1 text-sm font-medium text-black">
                 <span className="text-blue">[필수]</span> 이용약관에 동의
               </span>
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 text-xs text-gray underline hover:text-navy"
+              >
+                보기
+              </a>
             </button>
             <button
               onClick={() => setPrivacy((v) => !v)}
               className="flex items-center gap-3 rounded-lg border border-line px-4 py-5 text-left transition hover:bg-soft/40"
             >
               <RoundCheck checked={privacy} />
-              <span className="text-sm font-medium text-black">
+              <span className="flex-1 text-sm font-medium text-black">
                 <span className="text-blue">[필수]</span> 개인정보처리방침 동의
               </span>
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 text-xs text-gray underline hover:text-navy"
+              >
+                보기
+              </a>
             </button>
           </div>
           <NavButtons nextEnabled={all} onNext={() => setStep(2)} />

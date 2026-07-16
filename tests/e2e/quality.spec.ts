@@ -18,6 +18,8 @@ const PAGES = [
   "/signup",
   "/find-id",
   "/about",
+  "/terms",
+  "/privacy",
 ];
 
 // dev 환경 소음 제외 (HMR, 소스맵, 파비콘)

@@ -17,6 +17,8 @@ const PAGES = [
   "/signup",
   "/find-id",
   "/about",
+  "/terms",
+  "/privacy",
 ];
 
 const VIEWPORTS = [

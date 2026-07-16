@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getCompanyInfo } from "@/lib/settings";
 import PrintButton from "@/components/orders/PrintButton";
 
 const won = (n: number) => `${n.toLocaleString()}원`;
@@ -29,9 +30,10 @@ export default async function ReceiptPage({
   // 본인 또는 관리자만
   if (order.userId !== user.id && user.role !== "ADMIN") notFound();
 
-  const siteNameRow = await prisma.setting.findUnique({
-    where: { key: "site_name" },
-  });
+  const [siteNameRow, company] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: "site_name" } }),
+    getCompanyInfo(),
+  ]);
   const siteName = siteNameRow?.value ?? "SIGNAL SMM";
   const isStatement = type === "statement";
   const title = isStatement ? "거래명세서" : "영수증";
@@ -88,6 +90,13 @@ export default async function ReceiptPage({
           본 {title}는 {siteName}에서 발행되었으며, 보유잔액 결제 내역의 증빙으로
           사용하실 수 있습니다.
         </p>
+        {(company.name || company.bizno) && (
+          <p className="mt-2 text-xs text-gray">
+            공급자: {[company.name, company.ceo && `대표 ${company.ceo}`, company.bizno && `사업자등록번호 ${company.bizno}`, company.address]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
       </div>
 
       {/* 액션 (인쇄 시 숨김) */}

@@ -16,16 +16,10 @@ type History = {
   createdAt: string;
 };
 
-const presets = [
-  { label: "+ 1만원", value: 10000 },
-  { label: "+ 3만원", value: 30000 },
-  { label: "+ 5만원", value: 50000 },
-  { label: "+ 7만원", value: 70000 },
-  { label: "+ 10만원", value: 100000 },
-  { label: "+ 30만원", value: 300000 },
-  { label: "+ 50만원", value: 500000 },
-  { label: "+ 100만원", value: 1000000 },
-];
+// 프리셋 라벨: 만원 단위는 'N만원', 그 외는 원 단위 표기
+function presetLabel(v: number) {
+  return v % 10000 === 0 ? `+ ${v / 10000}만원` : `+ ${v.toLocaleString()}원`;
+}
 
 const receiptOptions = ["신청안함", "세금계산서", "현금영수증"];
 
@@ -71,12 +65,14 @@ export default function ChargePage({
   bank,
   history,
   copy,
+  presets,
 }: {
   isLoggedIn: boolean;
   balance: number;
   bank: Bank;
   history: History[];
   copy: Record<string, string>;
+  presets: number[];
 }) {
   const router = useRouter();
   const [amount, setAmount] = useState(0);
@@ -178,11 +174,11 @@ export default function ChargePage({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {presets.map((p) => (
                 <button
-                  key={p.value}
-                  onClick={() => setAmount((a) => a + p.value)}
+                  key={p}
+                  onClick={() => setAmount((a) => a + p)}
                   className="rounded border border-line px-3 py-4 text-base font-medium text-navy transition hover:border-blue hover:text-blue sm:px-4 sm:py-6 sm:text-lg"
                 >
-                  {p.label}
+                  {presetLabel(p)}
                 </button>
               ))}
             </div>
