@@ -28,5 +28,8 @@ export async function updateSettings(
 
   revalidatePath("/admin/settings");
   revalidatePath("/charge");
+  revalidatePath("/support");
+  revalidatePath("/about");
+  revalidatePath("/", "layout"); // 사이트명은 레이아웃(사이드바/상단바)에도 반영
   return { ok: true };
 }

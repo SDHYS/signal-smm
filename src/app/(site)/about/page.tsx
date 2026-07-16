@@ -3,10 +3,12 @@ import { Zap, ShieldCheck, Users, Headset } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export default async function AboutPage() {
-  const siteNameRow = await prisma.setting.findUnique({
-    where: { key: "site_name" },
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: ["site_name", "about_intro"] } },
   });
-  const siteName = siteNameRow?.value ?? "SignalSMM";
+  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const siteName = map.site_name ?? "SignalSMM";
+  const customIntro = map.about_intro?.trim();
 
   const values = [
     {
@@ -44,12 +46,9 @@ export default async function AboutPage() {
           <span className="text-orange">{siteName}</span>는 SNS 마케팅의 모든 것을
           제공합니다
         </h2>
-        <p className="max-w-[900px] text-lg font-normal leading-[30px] text-gray">
-          인스타그램 팔로워·좋아요부터 유튜브, 틱톡까지 — {siteName}는 다양한
-          플랫폼의 맞춤형 마케팅 서비스를 한 곳에서 제공하는 SNS 마케팅
-          전문 서비스입니다. 잔액을 충전해두면 필요할 때마다 원하는 서비스를
-          간편하게 주문할 수 있고, 진행 상황은 주문내역과 알림으로 바로 확인할
-          수 있습니다.
+        <p className="max-w-[900px] whitespace-pre-line text-lg font-normal leading-[30px] text-gray">
+          {customIntro ||
+            `인스타그램 팔로워·좋아요부터 유튜브, 틱톡까지 — ${siteName}는 다양한 플랫폼의 맞춤형 마케팅 서비스를 한 곳에서 제공하는 SNS 마케팅 전문 서비스입니다. 잔액을 충전해두면 필요할 때마다 원하는 서비스를 간편하게 주문할 수 있고, 진행 상황은 주문내역과 알림으로 바로 확인할 수 있습니다.`}
         </p>
       </section>
 

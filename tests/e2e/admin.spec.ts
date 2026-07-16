@@ -74,4 +74,37 @@ test.describe("관리자(로그인 세션)", () => {
     await expect(page.getByText("This page could not be found.")).toBeVisible();
     await expect(page.getByRole("heading", { name: "기본 정보" })).toHaveCount(0);
   });
+
+
+  test("설정 — 고객센터/회사소개 입력이 공개 페이지에 반영", async ({ page }) => {
+    // 저장
+    await page.goto("/admin/settings");
+    await page.getByLabel("카카오톡 채널").fill("@qa테스트채널");
+    await page.getByLabel("고객센터 전화번호").fill("010-9999-8888");
+    await page.getByLabel("소개 본문").fill("QA 소개문구입니다.\n두 번째 줄입니다.");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+
+    // 고객센터 반영
+    await page.goto("/support");
+    await expect(page.getByText("@qa테스트채널")).toBeVisible();
+    const tel = page.locator('a[href="tel:01099998888"]');
+    await expect(tel).toBeVisible();
+    await expect(tel).toHaveText("010-9999-8888");
+
+    // 회사소개 반영 (줄바꿈 유지)
+    await page.goto("/about");
+    await expect(page.getByText(/QA 소개문구입니다/)).toBeVisible();
+    await expect(page.getByText(/두 번째 줄입니다/)).toBeVisible();
+
+    // 원복 — 비우면 기본 동작(1:1 문의 유도 / 기본 소개문구)으로 복귀
+    await page.goto("/admin/settings");
+    await page.getByLabel("카카오톡 채널").fill("");
+    await page.getByLabel("고객센터 전화번호").fill("");
+    await page.getByLabel("소개 본문").fill("");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+    await page.goto("/support");
+    await expect(page.getByRole("link", { name: "1:1 문의 바로가기" }).first()).toBeVisible();
+  });
 });

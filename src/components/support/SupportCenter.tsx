@@ -3,36 +3,13 @@ import Link from "next/link";
 type Action =
   | { type: "text"; label: string }
   | { type: "tel"; label: string; number: string }
-  | { type: "link"; label: string; href: string };
+  | { type: "link"; label: string; href: string; external?: boolean };
 
 type SupportCard = {
   title: string;
   desc: string;
   action: Action;
 };
-
-const cards: SupportCard[] = [
-  {
-    title: "카카오톡 상담",
-    desc: "실시간 채팅으로 가장 빠르게 답변받을 수 있는 채널입니다.",
-    action: { type: "text", label: "카카오톡 아이디" },
-  },
-  {
-    title: "전화번호 상담",
-    desc: "통화로 자세한 상담을 원하시면 아래 번호로 연락 주세요.",
-    action: { type: "tel", label: "010-1234-5678", number: "01012345678" },
-  },
-  {
-    title: "제안서 보기",
-    desc: "서비스 구성과 가격이 정리된 제안서를 확인해 보세요.",
-    action: { type: "link", label: "자세히 보기", href: "/guide" },
-  },
-  {
-    title: "포트폴리오 확인",
-    desc: "그동안 진행한 마케팅 성과와 사례를 모아두었습니다.",
-    action: { type: "link", label: "자세히 보기", href: "/blog" },
-  },
-];
 
 function ActionBox({ action }: { action: Action }) {
   const cls =
@@ -44,7 +21,11 @@ function ActionBox({ action }: { action: Action }) {
       </a>
     );
   if (action.type === "link")
-    return (
+    return action.external ? (
+      <a href={action.href} target="_blank" rel="noopener noreferrer" className={cls}>
+        {action.label}
+      </a>
+    ) : (
       <Link href={action.href} className={cls}>
         {action.label}
       </Link>
@@ -52,7 +33,47 @@ function ActionBox({ action }: { action: Action }) {
   return <div className={cls}>{action.label}</div>;
 }
 
-export default function SupportCenter() {
+export default function SupportCenter({
+  kakao,
+  phone,
+}: {
+  kakao: string;
+  phone: string;
+}) {
+  // 카카오: 링크면 채널 열기 버튼, ID면 그대로 표시, 미설정이면 1:1 문의 유도
+  const kakaoAction: Action = !kakao
+    ? { type: "link", label: "1:1 문의 바로가기", href: "/inquiry" }
+    : /^https?:\/\//i.test(kakao)
+      ? { type: "link", label: "카카오톡 채널 열기", href: kakao, external: true }
+      : { type: "text", label: kakao };
+
+  const phoneAction: Action = phone
+    ? { type: "tel", label: phone, number: phone.replace(/[^0-9+]/g, "") }
+    : { type: "link", label: "1:1 문의 바로가기", href: "/inquiry" };
+
+  const cards: SupportCard[] = [
+    {
+      title: "카카오톡 상담",
+      desc: "실시간 채팅으로 가장 빠르게 답변받을 수 있는 채널입니다.",
+      action: kakaoAction,
+    },
+    {
+      title: "전화번호 상담",
+      desc: "통화로 자세한 상담을 원하시면 아래 번호로 연락 주세요.",
+      action: phoneAction,
+    },
+    {
+      title: "제안서 보기",
+      desc: "서비스 구성과 가격이 정리된 제안서를 확인해 보세요.",
+      action: { type: "link", label: "자세히 보기", href: "/guide" },
+    },
+    {
+      title: "포트폴리오 확인",
+      desc: "그동안 진행한 마케팅 성과와 사례를 모아두었습니다.",
+      action: { type: "link", label: "자세히 보기", href: "/blog" },
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8 pt-2">
       {/* 헤더 */}
