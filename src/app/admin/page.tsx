@@ -3,6 +3,10 @@ import AdminCharges, { type PendingCharge } from "@/components/admin/AdminCharge
 import AdminMessage from "@/components/admin/AdminMessage";
 import DashboardStats, { type Stat } from "@/components/admin/DashboardStats";
 import RevenueChart, { type DayRevenue } from "@/components/admin/RevenueChart";
+import { getBalance, smmConfigured } from "@/lib/smm";
+
+// 도매 잔액·발주실패 조회를 위해 요청 시 렌더 고정 (빌드 중 외부 API 호출 방지)
+export const dynamic = "force-dynamic";
 
 const won = (n: number) => `${n.toLocaleString()}원`;
 
@@ -26,6 +30,7 @@ export default async function AdminPage() {
     processingCount,
     pendingInquiries,
     recentOrders,
+    failedDispatchCount,
   ] = await Promise.all([
     prisma.chargeRequest.findMany({
       where: { status: "PENDING" },
@@ -57,7 +62,24 @@ export default async function AdminPage() {
       },
       select: { createdAt: true, totalAmount: true },
     }),
+    // 발주실패 주문 건수 (도매 미발주 + 에러)
+    prisma.order.count({
+      where: {
+        status: { in: ["PAID", "PROCESSING"] },
+        items: { some: { providerError: { not: null }, providerOrderId: null } },
+      },
+    }),
   ]);
+
+  // 도매 잔액 (외부 API — 실패해도 대시보드는 떠야 하므로 격리)
+  let providerBalance: number | null = null;
+  if (smmConfigured()) {
+    try {
+      providerBalance = Number((await getBalance()).balance);
+    } catch {
+      providerBalance = null;
+    }
+  }
 
   // 30일 일별 매출 집계 (KST 날짜 기준)
   const byDay = new Map<string, { amount: number; orders: number }>();
@@ -111,6 +133,24 @@ export default async function AdminPage() {
       value: `${memberCount.toLocaleString()}명`,
       href: "/admin/members",
     },
+    {
+      label: "발주 실패",
+      value: `${failedDispatchCount}건`,
+      accent: failedDispatchCount > 0 ? "red" : "navy",
+      sub: failedDispatchCount > 0 ? "즉시 조치" : undefined,
+      href: "/admin/orders?filter=failed",
+    },
+    // 도매 잔액 — 연동 시에만 노출 (잔액 부족이 대량 발주실패의 원인)
+    ...(providerBalance !== null
+      ? [
+          {
+            label: "도매 잔액",
+            value: `$${providerBalance.toFixed(2)}`,
+            accent: providerBalance < 5 ? "red" : providerBalance < 20 ? "orange" : "green",
+            sub: providerBalance < 5 ? "충전 필요" : undefined,
+          } as Stat,
+        ]
+      : []),
   ];
 
   const charges: PendingCharge[] = pending.map((c) => ({

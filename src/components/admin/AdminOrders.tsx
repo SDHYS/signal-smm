@@ -61,7 +61,12 @@ function Row({ o }: { o: AdminOrder }) {
 
   async function refund() {
     if (!confirm(`주문 #${o.orderNo}을(를) 환불할까요? 잔액이 복구됩니다.`)) return;
-    await act(() => refundOrder(o.id));
+    setBusy(true);
+    const res = await refundOrder(o.id);
+    setBusy(false);
+    if (!res.ok) alert(res.error ?? "처리에 실패했습니다.");
+    else if (res.note) alert(res.note);
+    router.refresh();
   }
 
   async function saveMemo() {
@@ -193,6 +198,7 @@ export default function AdminOrders({
   allCount,
   countByStatus,
   filteredCount,
+  failedCount,
   page,
   totalPages,
 }: {
@@ -202,6 +208,7 @@ export default function AdminOrders({
   allCount: number;
   countByStatus: Record<string, number>;
   filteredCount: number;
+  failedCount: number;
   page: number;
   totalPages: number;
 }) {
@@ -234,7 +241,12 @@ export default function AdminOrders({
           <h1 className="text-3xl font-bold text-navy">주문 관리</h1>
           <p className="text-base text-gray">
             {query ? `"${query}" 검색 · ` : ""}
-            {activeStatus === "ALL" ? "전체" : STATUS[activeStatus as AdminOrder["status"]]?.label} {filteredCount}건
+            {activeStatus === "ALL"
+              ? "전체"
+              : activeStatus === "FAILED"
+                ? "발주실패"
+                : STATUS[activeStatus as AdminOrder["status"]]?.label}{" "}
+            {filteredCount}건
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -265,7 +277,11 @@ export default function AdminOrders({
 
       {/* 검색 */}
       <form method="GET" className="flex items-center gap-2">
-        {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
+        {activeStatus === "FAILED" ? (
+          <input type="hidden" name="filter" value="failed" />
+        ) : activeStatus !== "ALL" ? (
+          <input type="hidden" name="status" value={activeStatus} />
+        ) : null}
         <input
           name="q"
           defaultValue={query}
@@ -285,6 +301,22 @@ export default function AdminOrders({
 
       {/* 상태 필터 탭 */}
       <div className="flex flex-wrap gap-2">
+        {/* 발주실패 — 도매 발주 안 된 주문 (즉시 조치 필요) */}
+        <Link
+          href={query ? `/admin/orders?filter=failed&q=${encodeURIComponent(query)}` : "/admin/orders?filter=failed"}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            activeStatus === "FAILED"
+              ? "bg-[#ED1C24] text-white"
+              : failedCount > 0
+                ? "bg-[#ED1C24]/10 text-[#ED1C24] hover:bg-[#ED1C24]/20"
+                : "bg-white text-gray-2 hover:bg-soft"
+          }`}
+        >
+          ⚠ 발주실패
+          <span className={`ml-1.5 ${activeStatus === "FAILED" ? "text-white/70" : "text-[#ED1C24]"}`}>
+            {failedCount}
+          </span>
+        </Link>
         {TABS.map((t) => {
           const active = t.key === activeStatus;
           const count = t.key === "ALL" ? allCount : (countByStatus[t.key] ?? 0);

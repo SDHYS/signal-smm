@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile, changePassword } from "@/app/actions/user";
 
@@ -28,15 +28,24 @@ function Field({
   placeholder?: string;
   disabled?: boolean;
 }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-[#222222]">{label}</label>
+      <label htmlFor={id} className="text-sm font-medium text-[#222222]">{label}</label>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        autoComplete={
+          type === "password"
+            ? label.includes("현재")
+              ? "current-password"
+              : "new-password"
+            : undefined
+        }
         className="w-full rounded border border-line px-4 py-3.5 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none disabled:bg-soft disabled:text-gray"
       />
     </div>
@@ -138,7 +147,7 @@ export default function MyPage({ info }: { info: MyInfo }) {
               {savingProfile ? "저장 중..." : "저장"}
             </button>
             {profileMsg && (
-              <span className={`text-sm font-medium ${profileMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
+              <span role="status" aria-live="polite" className={`text-sm font-medium ${profileMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
                 {profileMsg.text}
               </span>
             )}
@@ -171,7 +180,7 @@ export default function MyPage({ info }: { info: MyInfo }) {
               {savingPw ? "변경 중..." : "비밀번호 변경"}
             </button>
             {pwMsg && (
-              <span className={`text-sm font-medium ${pwMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
+              <span role="status" aria-live="polite" className={`text-sm font-medium ${pwMsg.ok ? "text-[#04B014]" : "text-[#ED1C24]"}`}>
                 {pwMsg.text}
               </span>
             )}

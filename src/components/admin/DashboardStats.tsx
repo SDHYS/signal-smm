@@ -5,7 +5,7 @@ export type Stat = {
   value: string;
   sub?: string;
   href?: string;
-  accent?: "orange" | "blue" | "green" | "navy";
+  accent?: "orange" | "blue" | "green" | "navy" | "red";
 };
 
 const ACCENT: Record<NonNullable<Stat["accent"]>, string> = {
@@ -13,6 +13,7 @@ const ACCENT: Record<NonNullable<Stat["accent"]>, string> = {
   blue: "text-blue",
   green: "text-[#04B014]",
   navy: "text-navy",
+  red: "text-[#ED1C24]",
 };
 
 function Card({ s }: { s: Stat }) {

@@ -62,7 +62,7 @@ test("회원 풀 여정 — 가입부터 환불·비번변경까지", async ({ p
 
   await test.step("① 회원가입 4단계", async () => {
     await page.goto("/signup");
-    await page.getByRole("button", { name: "전체동의" }).click();
+    await page.getByRole("checkbox", { name: "전체동의" }).click();
     await page.getByRole("button", { name: "다음" }).click();
     await page.getByPlaceholder("가입 진행 아이디").fill(USERNAME);
     await page.getByPlaceholder("계정 분실 시 확인용 이메일").fill(EMAIL);
@@ -211,7 +211,7 @@ test("회원 풀 여정 — 가입부터 환불·비번변경까지", async ({ p
     // 환불내역 탭에 표시
     await page.goto("/orders");
     await page.getByRole("button", { name: "환불내역" }).click();
-    await expect(page.getByText("취소").first()).toBeVisible();
+    await expect(page.getByText("환불", { exact: true }).first()).toBeVisible();
   });
 
   await test.step("⑫ 비밀번호 변경 → 새 비번으로 재로그인", async () => {

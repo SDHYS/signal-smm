@@ -361,7 +361,7 @@ describe("상태 동기화 (syncProviderOrders)", () => {
     const u = await makeUser(0);
     const p = await makeProduct(4189);
     // 10개 주문인데 공급사가 remains=9999 오응답 → 최대 10개(=1,000원)까지만 환불
-    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10, providerOrderId: "77099" });
+    await makeOrder({ userId: u.id, productId: p.id, quantity: 10, providerOrderId: "77099" });
     stubSmm(() => ({ status: "Partial", remains: "9999" }));
 
     await syncProviderOrders();

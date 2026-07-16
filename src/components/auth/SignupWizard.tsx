@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
@@ -10,11 +10,12 @@ function RoundCheck({ checked, size = 28 }: { checked: boolean; size?: number })
   return (
     <span
       className={`flex shrink-0 items-center justify-center rounded-full border transition ${
-        checked ? "border-blue bg-blue text-white" : "border-line bg-white text-muted"
+        checked ? "border-blue bg-blue text-white" : "border-line bg-white text-transparent"
       }`}
       style={{ width: size, height: size }}
     >
-      <Check size={size * 0.55} strokeWidth={2.5} />
+      {/* 체크 시에만 아이콘 노출 — 미체크는 빈 원(색상만이 아니라 형태로 구분) */}
+      {checked && <Check size={size * 0.55} strokeWidth={2.5} />}
     </span>
   );
 }
@@ -43,6 +44,7 @@ function Field({
   value,
   onChange,
   hint,
+  autoComplete,
 }: {
   label: string;
   placeholder: string;
@@ -50,15 +52,19 @@ function Field({
   value: string;
   onChange: (v: string) => void;
   hint?: string;
+  autoComplete?: string;
 }) {
+  const id = useId();
   return (
     <div className="flex w-full flex-col gap-2">
-      <span className="text-sm font-medium text-[#222222]">{label}</span>
+      <label htmlFor={id} className="text-sm font-medium text-[#222222]">{label}</label>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         className="w-full rounded border border-line px-4 py-5 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
       />
       {hint && <p className="text-sm font-normal text-gray">{hint}</p>}
@@ -204,6 +210,9 @@ export default function SignupWizard({
         <div className="flex w-full flex-col gap-8">
           <div className="flex w-full flex-col gap-3">
             <button
+              type="button"
+              role="checkbox"
+              aria-checked={all}
               onClick={toggleAll}
               className="flex items-center gap-3 rounded-lg border border-line px-4 py-5 text-left transition hover:bg-soft/40"
             >
@@ -211,6 +220,9 @@ export default function SignupWizard({
               <span className="text-base font-medium text-black">전체동의</span>
             </button>
             <button
+              type="button"
+              role="checkbox"
+              aria-checked={terms}
               onClick={() => setTerms((v) => !v)}
               className="flex items-center gap-3 rounded-lg border border-line px-4 py-5 text-left transition hover:bg-soft/40"
             >
@@ -229,6 +241,9 @@ export default function SignupWizard({
               </a>
             </button>
             <button
+              type="button"
+              role="checkbox"
+              aria-checked={privacy}
               onClick={() => setPrivacy((v) => !v)}
               className="flex items-center gap-3 rounded-lg border border-line px-4 py-5 text-left transition hover:bg-soft/40"
             >
@@ -257,8 +272,8 @@ export default function SignupWizard({
       <Shell step={2} title={copy.signup2_title} subtitle={copy.signup2_subtitle}>
         <div className="flex w-full flex-col gap-8">
           <div className="flex w-full flex-col gap-5">
-            <Field label="아이디" placeholder="가입 진행 아이디" value={userId} onChange={setUserId} />
-            <Field label="이메일" type="email" placeholder="계정 분실 시 확인용 이메일" value={email} onChange={setEmail} />
+            <Field label="아이디" placeholder="가입 진행 아이디" value={userId} onChange={setUserId} autoComplete="username" />
+            <Field label="이메일" type="email" placeholder="계정 분실 시 확인용 이메일" value={email} onChange={setEmail} autoComplete="email" />
             <Field
               label="비밀번호"
               type="password"
@@ -266,6 +281,7 @@ export default function SignupWizard({
               value={password}
               onChange={setPassword}
               hint="8자 이상 입력해주세요"
+              autoComplete="new-password"
             />
             <Field
               label="비밀번호 확인"
@@ -273,6 +289,7 @@ export default function SignupWizard({
               placeholder="비밀번호 재확인"
               value={passwordConfirm}
               onChange={setPasswordConfirm}
+              autoComplete="new-password"
             />
             {passwordConfirm.length > 0 && password !== passwordConfirm && (
               <p className="-mt-3 text-sm font-medium text-[#ED1C24]">
@@ -339,7 +356,7 @@ export default function SignupWizard({
           </div>
         </div>
         {error && (
-          <p className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
+          <p role="alert" className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
         )}
         <NavButtons
           onPrev={() => setStep(2)}

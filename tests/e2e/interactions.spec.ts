@@ -137,7 +137,7 @@ test("비밀번호 찾기 링크 → find-id 비밀번호 안내 섹션", async 
 
 test("가입 2단계 — 비밀번호 불일치 인라인 경고", async ({ page }) => {
   await page.goto("/signup");
-  await page.getByRole("button", { name: "전체동의" }).click();
+  await page.getByRole("checkbox", { name: "전체동의" }).click();
   await page.getByRole("button", { name: "다음" }).click();
   await page.getByPlaceholder("8자 이상 입력").fill("password123");
   await page.getByPlaceholder("비밀번호 재확인").fill("password999");

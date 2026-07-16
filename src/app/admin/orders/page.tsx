@@ -8,29 +8,40 @@ const PAGE_SIZE = 50;
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string; filter?: string }>;
 }) {
-  const { status, q, page } = await searchParams;
+  const { status, q, page, filter } = await searchParams;
   const query = q?.trim() ?? "";
-  const activeStatus = STATUSES.includes(status as never) ? status! : "ALL";
+  // 발주실패 필터: 발주 시도했으나 도매 주문번호 없이 에러 기록됨 + 아직 진행 가능 상태
+  const failedOnly = filter === "failed";
+  const activeStatus = failedOnly
+    ? "FAILED"
+    : STATUSES.includes(status as never)
+      ? status!
+      : "ALL";
   const pageNum = Math.max(1, Number(page) || 1);
 
-  const where: Prisma.OrderWhereInput = {
-    ...(activeStatus !== "ALL" ? { status: activeStatus as never } : {}),
-    ...(query
-      ? {
-          OR: [
-            { orderNo: { contains: query, mode: "insensitive" } },
-            { user: { username: { contains: query, mode: "insensitive" } } },
-            { user: { name: { contains: query, mode: "insensitive" } } },
-            { items: { some: { productName: { contains: query, mode: "insensitive" } } } },
-          ],
-        }
-      : {}),
+  const searchOr = query
+    ? [
+        { orderNo: { contains: query, mode: "insensitive" as const } },
+        { user: { username: { contains: query, mode: "insensitive" as const } } },
+        { user: { name: { contains: query, mode: "insensitive" as const } } },
+        { items: { some: { productName: { contains: query, mode: "insensitive" as const } } } },
+      ]
+    : undefined;
+
+  const failedFilter: Prisma.OrderWhereInput = {
+    status: { in: ["PAID", "PROCESSING"] },
+    items: { some: { providerError: { not: null }, providerOrderId: null } },
   };
 
-  // 상태별 건수(검색어 반영) + 페이지 데이터
-  const [rows, filteredCount, grouped] = await Promise.all([
+  const where: Prisma.OrderWhereInput = {
+    ...(failedOnly ? failedFilter : activeStatus !== "ALL" ? { status: activeStatus as never } : {}),
+    ...(searchOr ? { OR: searchOr } : {}),
+  };
+
+  // 상태별 건수(검색어 반영) + 페이지 데이터 + 발주실패 건수
+  const [rows, filteredCount, grouped, failedCount] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -57,16 +68,10 @@ export default async function AdminOrdersPage({
     prisma.order.groupBy({
       by: ["status"],
       _count: { id: true },
-      where: query
-        ? {
-            OR: [
-              { orderNo: { contains: query, mode: "insensitive" } },
-              { user: { username: { contains: query, mode: "insensitive" } } },
-              { user: { name: { contains: query, mode: "insensitive" } } },
-              { items: { some: { productName: { contains: query, mode: "insensitive" } } } },
-            ],
-          }
-        : {},
+      where: searchOr ? { OR: searchOr } : {},
+    }),
+    prisma.order.count({
+      where: { ...failedFilter, ...(searchOr ? { OR: searchOr } : {}) },
     }),
   ]);
 
@@ -106,6 +111,7 @@ export default async function AdminOrdersPage({
       allCount={allCount}
       countByStatus={countByStatus}
       filteredCount={filteredCount}
+      failedCount={failedCount}
       page={pageNum}
       totalPages={totalPages}
     />

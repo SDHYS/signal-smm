@@ -52,18 +52,25 @@ export default function LoginForm({ copy }: { copy: Record<string, string> }) {
               <div className="flex w-full flex-col gap-4">
                 <Field label="아이디">
                   <input
+                    name="username"
+                    type="text"
+                    autoComplete="username"
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
                     placeholder="아이디를 입력하세요"
+                    aria-label="아이디"
                     className="w-full rounded border border-line px-4 py-5 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
                   />
                 </Field>
                 <Field label="비밀번호">
                   <input
+                    name="password"
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="비밀번호를 입력하세요"
+                    aria-label="비밀번호"
                     className="w-full rounded border border-line px-4 py-5 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
                   />
                 </Field>
@@ -92,7 +99,7 @@ export default function LoginForm({ copy }: { copy: Record<string, string> }) {
             </div>
 
             {error && (
-              <p className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
+              <p role="alert" className="w-full text-sm font-medium text-[#ED1C24]">{error}</p>
             )}
 
             <button

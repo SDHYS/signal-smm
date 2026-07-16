@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createChargeRequest, cancelMyCharge } from "@/app/actions/charge";
@@ -46,10 +46,12 @@ function LabeledInput({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const id = useId();
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <span className="text-sm font-medium text-[#222222]">{label}</span>
+      <label htmlFor={id} className="text-sm font-medium text-[#222222]">{label}</label>
       <input
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -219,6 +221,7 @@ export default function ChargePage({
               value={depositor}
               onChange={(e) => setDepositor(e.target.value)}
               placeholder="입금자명을 작성해주세요"
+              aria-label="입금자명"
               className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
             />
             <p className="whitespace-pre-line text-sm font-normal leading-6 text-navy">
@@ -277,7 +280,7 @@ export default function ChargePage({
                   <span className="text-[30px] font-semibold leading-7 text-navy">{won(total)}</span>
                 </div>
 
-                {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
+                {error && <p role="alert" className="text-sm font-medium text-[#ED1C24]">{error}</p>}
 
                 <button
                   onClick={handleSubmit}
@@ -289,7 +292,7 @@ export default function ChargePage({
 
                 {/* 입금 안내 (신청 완료 후) */}
                 {done && (
-                  <div className="flex flex-col gap-3 rounded-xl border border-blue/40 bg-blue/5 p-8">
+                  <div role="status" aria-live="polite" className="flex flex-col gap-3 rounded-xl border border-blue/40 bg-blue/5 p-8">
                     <p className="text-lg font-semibold text-navy">
                       충전 신청 완료 — 아래 계좌로 입금해주세요
                     </p>

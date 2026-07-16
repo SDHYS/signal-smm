@@ -8,7 +8,7 @@ import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { dispatchOrder, forceRedispatchOrder } from "@/lib/dispatch";
 import { cancelOrders, smmConfigured } from "@/lib/smm";
 
-export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
+export type OrderResult = { ok: boolean; error?: string; orderNo?: string; note?: string };
 
 export async function createOrder(input: {
   productId: string;
@@ -287,13 +287,13 @@ export async function refundOrder(id: string): Promise<OrderResult> {
 
   // 도매에 이미 발주된 건이면 취소 요청. 발주된 주문을 환불하면 도매 작업은 계속돼
   // 도매비만 나갈 수 있으므로, 취소 요청 성공/실패를 관리자 메모에 남겨 손실을 인지시킨다.
+  let cancelNote: string | undefined;
   if (smmConfigured()) {
     const dispatched = await prisma.orderItem.findMany({
       where: { orderId: id, providerOrderId: { not: null } },
       select: { providerOrderId: true },
     });
     if (dispatched.length > 0) {
-      let cancelNote: string;
       try {
         await cancelOrders(dispatched.map((i) => i.providerOrderId!));
         cancelNote = `도매 취소 요청됨(#${dispatched.map((i) => i.providerOrderId).join(",")}) — 실제 취소 여부는 도매 상태 동기화로 확인 필요`;
@@ -320,5 +320,5 @@ export async function refundOrder(id: string): Promise<OrderResult> {
 
   revalidatePath("/admin/orders");
   revalidatePath("/orders");
-  return { ok: true };
+  return { ok: true, note: cancelNote };
 }

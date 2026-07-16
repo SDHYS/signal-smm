@@ -340,8 +340,18 @@ export default function OrderFlow({
               return (
                 <div
                   key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={active}
+                  aria-label={`${p.name} 선택`}
                   onClick={() => setServiceId(p.id)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-line/70 py-6 text-left last:border-0"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setServiceId(p.id);
+                    }
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-line/70 py-6 text-left last:border-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   <div className="flex items-center gap-3">
                     <button
@@ -498,6 +508,7 @@ export default function OrderFlow({
           value={link}
           onChange={(e) => setLink(e.target.value)}
           placeholder="게시물 링크를 입력해주세요"
+          aria-label="주문 링크"
           className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
         />
       </section>
@@ -533,7 +544,7 @@ export default function OrderFlow({
 
       {/* 주문하기 */}
       <div className="flex flex-col gap-5">
-        {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
+        {error && <p role="alert" className="text-sm font-medium text-[#ED1C24]">{error}</p>}
         <button
           onClick={handleOrder}
           disabled={loading}

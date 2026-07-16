@@ -43,9 +43,9 @@ export default function FindId({ eyebrow }: { eyebrow: string }) {
           placeholder="이메일 입력"
           className="w-full rounded border border-line px-4 py-4 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
         />
-        {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
+        {error && <p role="alert" className="text-sm font-medium text-[#ED1C24]">{error}</p>}
         {result && (
-          <div className="rounded-lg bg-blue/5 p-5 text-center">
+          <div role="status" aria-live="polite" className="rounded-lg bg-blue/5 p-5 text-center">
             <p className="text-sm text-gray">회원님의 아이디</p>
             <p className="mt-1 text-2xl font-bold tracking-wider text-navy">{result}</p>
           </div>
