@@ -197,4 +197,20 @@ test.describe("관리자(로그인 세션)", () => {
     );
     expect(restored).toBe("#ef552b");
   });
+
+  test("매출 차트 — 대시보드 렌더 + 표 보기 토글", async ({ page }) => {
+    await page.goto("/admin");
+    await expect(page.getByText("매출 추이 — 최근 30일")).toBeVisible();
+    await page.getByText("일별 표로 보기").click();
+    await expect(page.getByRole("columnheader", { name: "매출", exact: true })).toBeVisible();
+  });
+
+  test("주문 CSV — 필터 반영 다운로드", async ({ page }) => {
+    await page.goto("/admin/orders");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("link", { name: "CSV 다운로드" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^orders-\d{4}-\d{2}-\d{2}\.csv$/);
+  });
 });

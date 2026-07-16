@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import AdminCharges, { type PendingCharge } from "@/components/admin/AdminCharges";
 import AdminMessage from "@/components/admin/AdminMessage";
 import DashboardStats, { type Stat } from "@/components/admin/DashboardStats";
+import RevenueChart, { type DayRevenue } from "@/components/admin/RevenueChart";
 
 const won = (n: number) => `${n.toLocaleString()}원`;
 
@@ -24,6 +25,7 @@ export default async function AdminPage() {
     todaySales,
     processingCount,
     pendingInquiries,
+    recentOrders,
   ] = await Promise.all([
     prisma.chargeRequest.findMany({
       where: { status: "PENDING" },
@@ -47,7 +49,37 @@ export default async function AdminPage() {
     }),
     prisma.order.count({ where: { status: "PROCESSING" } }),
     prisma.inquiry.count({ where: { status: "PENDING" } }),
+    // 최근 30일 매출 차트용 (환불 제외)
+    prisma.order.findMany({
+      where: {
+        createdAt: { gte: new Date(todayStart.getTime() - 29 * 24 * 60 * 60 * 1000) },
+        status: { not: "CANCELLED" },
+      },
+      select: { createdAt: true, totalAmount: true },
+    }),
   ]);
+
+  // 30일 일별 매출 집계 (KST 날짜 기준)
+  const byDay = new Map<string, { amount: number; orders: number }>();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(kstMidnight.getTime() - i * 24 * 60 * 60 * 1000);
+    byDay.set(d.toISOString().slice(0, 10), { amount: 0, orders: 0 });
+  }
+  for (const o of recentOrders) {
+    const key = new Date(o.createdAt.getTime() + kstOffset).toISOString().slice(0, 10);
+    const slot = byDay.get(key);
+    if (slot) {
+      slot.amount += o.totalAmount;
+      slot.orders += 1;
+    }
+  }
+  const revenueDays: DayRevenue[] = [...byDay.entries()].map(([date, v]) => ({
+    date,
+    label: `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
+    amount: v.amount,
+    orders: v.orders,
+  }));
+  const revenueTotal = revenueDays.reduce((sum, d) => sum + d.amount, 0);
 
   const stats: Stat[] = [
     { label: "오늘 주문", value: `${todayOrders}건`, accent: "blue", href: "/admin/orders" },
@@ -94,6 +126,8 @@ export default async function AdminPage() {
         <h1 className="text-3xl font-bold text-navy">대시보드</h1>
         <DashboardStats stats={stats} />
       </div>
+
+      <RevenueChart days={revenueDays} total={revenueTotal} />
 
       <div className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold text-navy">충전 입금 확인</h2>

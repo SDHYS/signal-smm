@@ -236,6 +236,19 @@ export default function AdminOrders({
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <a
+              href={`/api/admin/orders-csv${(() => {
+                const sp = new URLSearchParams();
+                if (activeStatus !== "ALL") sp.set("status", activeStatus);
+                if (query) sp.set("q", query);
+                const s = sp.toString();
+                return s ? `?${s}` : "";
+              })()}`}
+              className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-medium text-navy transition hover:bg-soft"
+            >
+              CSV 다운로드
+            </a>
           <button
             onClick={syncNow}
             disabled={syncing}
@@ -243,6 +256,7 @@ export default function AdminOrders({
           >
             {syncing ? "동기화 중..." : "도매 상태 동기화"}
           </button>
+          </div>
           {syncMsg && <span className="text-xs text-gray">{syncMsg}</span>}
         </div>
       </div>
