@@ -44,10 +44,12 @@ function groupByDate(
 
 export default async function OrdersPage() {
   const [user, copy] = await Promise.all([getCurrentUser(), getCopy()]);
+  // 최근 200건 상한 — 무제한 조회/DOM 폭발 방지 (그 이상은 추후 페이지네이션)
   const all = user
     ? await prisma.order.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
+        take: 200,
         select: {
           id: true,
           orderNo: true,

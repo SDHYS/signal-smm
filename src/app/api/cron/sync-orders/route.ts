@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { syncProviderOrders } from "@/lib/sync-orders";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// 타이밍 공격 방지 상수시간 비교
+function tokenMatches(auth: string | null, secret: string): boolean {
+  const expected = `Bearer ${secret}`;
+  const a = Buffer.from(auth ?? "");
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // Vercel Cron(매일 1회 — Hobby 플랜 한도) 또는 외부 크론이 호출.
 // 더 짧은 주기가 필요하면 외부 크론(cron-job.org 등)에서
@@ -11,7 +20,7 @@ export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
   if (secret) {
-    if (auth !== `Bearer ${secret}`)
+    if (!tokenMatches(auth, secret))
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   } else if (process.env.NODE_ENV === "production") {
     return NextResponse.json(

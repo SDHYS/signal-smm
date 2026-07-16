@@ -1,5 +1,24 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "./prisma";
+
+async function loadSettings(): Promise<Record<string, string>> {
+  const rows = await prisma.setting.findMany();
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+}
+
+/**
+ * Setting 테이블 전체를 요청당 1회만 읽어 캐시한다 (copy_ 접두 문구 포함).
+ * 테이블은 설정 ~40키 + 문구 ~130키로 매우 작아 통읽기가 개별 조회보다 저렴하다.
+ * 모든 설정/문구 헬퍼가 이 맵에서 파생되므로 페이지당 DB 왕복이 1회로 수렴한다.
+ *
+ * 테스트(요청 컨텍스트 없음)에서는 cache가 프로세스 전역처럼 남아 설정 변경이
+ * 반영되지 않으므로, VITEST 환경에서는 캐시를 우회한다(설정 변경 검증용).
+ */
+const cachedLoad = cache(loadSettings);
+export function getSettingsMap(): Promise<Record<string, string>> {
+  return process.env.VITEST ? loadSettings() : cachedLoad();
+}
 
 export type BankInfo = { bankName: string; account: string; holder: string };
 export type SupportInfo = { kakao: string; phone: string };
@@ -47,24 +66,17 @@ export type CompanyInfo = {
   email: string;
 };
 
+const t = (v: string | undefined) => v?.trim() ?? "";
+
 export async function getCompanyInfo(): Promise<CompanyInfo> {
-  const keys = [
-    "company_name",
-    "company_ceo",
-    "company_bizno",
-    "company_mailorder",
-    "company_address",
-    "company_email",
-  ];
-  const rows = await prisma.setting.findMany({ where: { key: { in: keys } } });
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value.trim()]));
+  const map = await getSettingsMap();
   return {
-    name: map.company_name ?? "",
-    ceo: map.company_ceo ?? "",
-    bizno: map.company_bizno ?? "",
-    mailorder: map.company_mailorder ?? "",
-    address: map.company_address ?? "",
-    email: map.company_email ?? "",
+    name: t(map.company_name),
+    ceo: t(map.company_ceo),
+    bizno: t(map.company_bizno),
+    mailorder: t(map.company_mailorder),
+    address: t(map.company_address),
+    email: t(map.company_email),
   };
 }
 
@@ -91,43 +103,45 @@ export type ThemeColors = {
 
 /** 어드민 설정 테마색 — 유효한 hex만 반환, 파생색(soft/deep) 자동 계산 */
 export async function getThemeColors(): Promise<ThemeColors> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: ["theme_color_orange", "theme_color_navy", "theme_color_blue"] } },
-  });
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value.trim()]));
+  const map = await getSettingsMap();
+  const orange = t(map.theme_color_orange);
+  const navy = t(map.theme_color_navy);
+  const blue = t(map.theme_color_blue);
   const out: ThemeColors = {};
-  if (HEX_RE.test(map.theme_color_orange ?? "")) {
-    out.orange = map.theme_color_orange;
-    out.orangeSoft = shade(map.theme_color_orange, 0.25);
-    out.orangeDeep = shade(map.theme_color_orange, -0.3);
+  if (HEX_RE.test(orange)) {
+    out.orange = orange;
+    out.orangeSoft = shade(orange, 0.25);
+    out.orangeDeep = shade(orange, -0.3);
   }
-  if (HEX_RE.test(map.theme_color_navy ?? "")) out.navy = map.theme_color_navy;
-  if (HEX_RE.test(map.theme_color_blue ?? "")) {
-    out.blue = map.theme_color_blue;
-    out.blueSoft = shade(map.theme_color_blue, 0.45);
+  if (HEX_RE.test(navy)) out.navy = navy;
+  if (HEX_RE.test(blue)) {
+    out.blue = blue;
+    out.blueSoft = shade(blue, 0.45);
   }
   return out;
 }
 
 export async function getLogoUrl(): Promise<string> {
-  const row = await prisma.setting.findUnique({ where: { key: "logo_url" } });
-  const v = row?.value.trim() ?? "";
-  return v || "/brand/로고텍스트일체형.png";
+  const map = await getSettingsMap();
+  return t(map.logo_url) || "/brand/로고텍스트일체형.png";
 }
 
 export const DEFAULT_SIGNUP_CHANNELS = ["구글", "네이버", "아이보스", "지인", "인스타"];
 
 export async function getSignupChannels(): Promise<string[]> {
-  const row = await prisma.setting.findUnique({ where: { key: "signup_channels" } });
-  if (!row?.value.trim()) return DEFAULT_SIGNUP_CHANNELS;
-  const parsed = row.value.split(",").map((v) => v.trim()).filter(Boolean);
+  const map = await getSettingsMap();
+  const raw = t(map.signup_channels);
+  if (!raw) return DEFAULT_SIGNUP_CHANNELS;
+  const parsed = raw.split(",").map((v) => v.trim()).filter(Boolean);
   return parsed.length > 0 ? parsed.slice(0, 12) : DEFAULT_SIGNUP_CHANNELS;
 }
 
 /** 부가세율 (0~20%, 기본 10) */
 export async function getVatRate(): Promise<number> {
-  const row = await prisma.setting.findUnique({ where: { key: "vat_rate" } });
-  const n = Number(row?.value.trim());
+  const map = await getSettingsMap();
+  const raw = t(map.vat_rate);
+  if (raw === "") return 10; // 미설정 → 기본 10% (Number("")===0 폴백 방지)
+  const n = Number(raw);
   if (!Number.isFinite(n) || n < 0 || n > 20) return 10;
   return Math.round(n);
 }
@@ -137,9 +151,10 @@ export const DEFAULT_CHARGE_PRESETS = [
 ];
 
 export async function getChargePresets(): Promise<number[]> {
-  const row = await prisma.setting.findUnique({ where: { key: "charge_presets" } });
-  if (!row?.value.trim()) return DEFAULT_CHARGE_PRESETS;
-  const parsed = row.value
+  const map = await getSettingsMap();
+  const raw = t(map.charge_presets);
+  if (!raw) return DEFAULT_CHARGE_PRESETS;
+  const parsed = raw
     .split(",")
     .map((v) => Number(v.trim()))
     .filter((n) => Number.isSafeInteger(n) && n > 0);
@@ -147,17 +162,14 @@ export async function getChargePresets(): Promise<number[]> {
 }
 
 export async function getAllSettings(): Promise<Record<string, string>> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: [...SETTING_KEYS] } },
-  });
-  return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const map = await getSettingsMap();
+  return Object.fromEntries(
+    (SETTING_KEYS as readonly string[]).filter((k) => k in map).map((k) => [k, map[k]]),
+  );
 }
 
 export async function getBankInfo(): Promise<BankInfo> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: ["bank_name", "bank_account", "bank_holder"] } },
-  });
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const map = await getSettingsMap();
   return {
     bankName: map.bank_name ?? "",
     account: map.bank_account ?? "",
@@ -166,12 +178,9 @@ export async function getBankInfo(): Promise<BankInfo> {
 }
 
 export async function getSupportInfo(): Promise<SupportInfo> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { in: ["support_kakao", "support_phone"] } },
-  });
-  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const map = await getSettingsMap();
   return {
-    kakao: map.support_kakao?.trim() ?? "",
-    phone: map.support_phone?.trim() ?? "",
+    kakao: t(map.support_kakao),
+    phone: t(map.support_phone),
   };
 }

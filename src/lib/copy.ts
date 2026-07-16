@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "./prisma";
+import { getSettingsMap } from "./settings";
 
 /**
  * 사이트 문구 레지스트리 — 유저 페이지의 안내/마케팅 문구를 어드민에서 관리한다.
@@ -196,15 +196,13 @@ const DEFAULTS: Record<string, string> = Object.fromEntries(
 
 export type Copy = Record<string, string>;
 
-/** 저장된 문구 + 기본값 병합. 키는 접두사 없는 짧은 키. */
+/** 저장된 문구 + 기본값 병합. 키는 접두사 없는 짧은 키.
+ *  Setting 통읽기(getSettingsMap, 요청당 캐시)에서 copy_ 접두 키만 분리한다. */
 export async function getCopy(): Promise<Copy> {
-  const rows = await prisma.setting.findMany({
-    where: { key: { startsWith: "copy_" } },
-  });
-  const saved = Object.fromEntries(
-    rows
-      .filter((r) => r.value.trim() !== "")
-      .map((r) => [r.key.slice("copy_".length), r.value]),
-  );
+  const map = await getSettingsMap();
+  const saved: Copy = {};
+  for (const [k, v] of Object.entries(map)) {
+    if (k.startsWith("copy_") && v.trim() !== "") saved[k.slice("copy_".length)] = v;
+  }
   return { ...DEFAULTS, ...saved };
 }

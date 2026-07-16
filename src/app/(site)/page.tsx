@@ -3,6 +3,7 @@ import OrderIntro from "@/components/home/OrderIntro";
 import OrderFlow from "@/components/home/OrderFlow";
 import { getCurrentUser } from "@/lib/auth";
 import { getCopy } from "@/lib/copy";
+import { getSettingsMap } from "@/lib/settings";
 import { prisma } from "@/lib/prisma";
 
 function mask(username: string) {
@@ -23,11 +24,12 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const [user, products, latestOrder, siteNameRow, copy] = await Promise.all([
-    getCurrentUser(),
+  const user = await getCurrentUser(); // 캐시됨 — favorites 조건에 필요
+  const [products, latestOrder, settings, copy, favorites] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
+      take: 500,
       select: {
         id: true,
         category: true,
@@ -48,16 +50,16 @@ export default async function Home({
         items: { take: 1, select: { productName: true, quantity: true } },
       },
     }),
-    prisma.setting.findUnique({ where: { key: "site_name" } }),
+    getSettingsMap(),
     getCopy(),
+    user
+      ? prisma.favorite.findMany({
+          where: { userId: user.id },
+          select: { productId: true },
+        })
+      : Promise.resolve([]),
   ]);
-
-  const favorites = user
-    ? await prisma.favorite.findMany({
-        where: { userId: user.id },
-        select: { productId: true },
-      })
-    : [];
+  const siteName = settings.site_name || "SIGNAL SMM";
 
   const ticker = latestOrder
     ? `[${timeAgo(latestOrder.createdAt)}] ${mask(latestOrder.user.username)} 님이 ${
@@ -67,7 +69,7 @@ export default async function Home({
 
   return (
     <div className="flex flex-col gap-8 pt-2">
-      <HeroSection siteName={siteNameRow?.value ?? "SIGNAL SMM"} copy={copy} />
+      <HeroSection siteName={siteName} copy={copy} />
       <OrderIntro ticker={ticker} copy={copy} />
       <OrderFlow
         isLoggedIn={!!user}

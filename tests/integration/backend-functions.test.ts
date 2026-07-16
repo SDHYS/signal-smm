@@ -190,6 +190,21 @@ describe("즐겨찾기/알림 — 소유권", () => {
   });
 });
 
+describe("주문 — targetUrl 보안 검증", () => {
+  it("javascript:/잘못된 스킴 링크 거절, http(s)만 허용", async () => {
+    const u = await makeUser(1_000_000);
+    const p = await makeProduct(100);
+    asUser(u);
+    for (const link of ["javascript:alert(1)", "data:text/html,x", "not a url", "ftp://x.com"]) {
+      const r = await createOrder({ productId: p.id, quantity: 1, targetUrl: link });
+      expect(r.ok, `${link} 는 거절되어야 함`).toBe(false);
+    }
+    const ok = await createOrder({ productId: p.id, quantity: 1, targetUrl: "https://instagram.com/p/x" });
+    expect(ok.ok).toBe(true);
+    expect(await prisma.order.count({ where: { userId: u.id } })).toBe(1); // 정상 1건만
+  });
+});
+
 describe("주문 — 상품 상태/권한/상태전이", () => {
   it("비활성/존재하지 않는 상품 주문 거절, 비로그인 거절", async () => {
     const u = await makeUser(100_000);

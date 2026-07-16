@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { setOrderStatus, refundOrder, setOrderMemo, redispatchOrder, syncOrdersAction } from "@/app/actions/order";
+import { safeHref } from "@/lib/safe-url";
 
 export type AdminOrder = {
   id: string;
@@ -89,9 +90,9 @@ function Row({ o }: { o: AdminOrder }) {
             <span className="font-medium text-navy">{won(o.total)}</span> ·{" "}
             {new Date(o.createdAt).toLocaleString("ko-KR")}
           </span>
-          {o.targetUrl && (
+          {safeHref(o.targetUrl) && (
             <a
-              href={o.targetUrl}
+              href={safeHref(o.targetUrl)!}
               target="_blank"
               rel="noopener noreferrer"
               className="truncate text-xs text-blue underline"

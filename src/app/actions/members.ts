@@ -17,6 +17,8 @@ async function requireAdmin() {
 export async function adjustBalance(userId: string, delta: number): Promise<Result> {
   if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
 
+  if (!Number.isFinite(delta))
+    return { ok: false, error: "조정 금액이 올바르지 않습니다." };
   const amount = Math.trunc(delta);
   if (!amount) return { ok: false, error: "조정 금액을 입력해주세요." };
 

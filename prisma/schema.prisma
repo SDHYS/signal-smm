@@ -59,7 +59,7 @@ model ChargeRequest {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  @@index([userId])
+  @@index([userId, createdAt])
   @@index([status])
   @@map("charge_requests")
 }
@@ -117,8 +117,8 @@ model Order {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  @@index([userId])
-  @@index([status])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
   @@index([createdAt])
   @@map("orders")
 }
@@ -226,7 +226,7 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId, read])
-  @@index([createdAt])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 

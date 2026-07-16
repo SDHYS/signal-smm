@@ -2,7 +2,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import TopBar, { type TopBarNotification } from "@/components/layout/TopBar";
 import Footer from "@/components/layout/Footer";
 import { getCurrentUser } from "@/lib/auth";
-import { getCompanyInfo, getLogoUrl, getThemeColors } from "@/lib/settings";
+import { getCompanyInfo, getLogoUrl, getThemeColors, getSettingsMap } from "@/lib/settings";
 import { getCopy } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
 
@@ -13,8 +13,8 @@ export default async function SiteLayout({
 }) {
   const user = await getCurrentUser();
 
-  const [siteNameRow, company, logoUrl, theme, copy, rows, unreadCount] = await Promise.all([
-    prisma.setting.findUnique({ where: { key: "site_name" } }),
+  const [settings, company, logoUrl, theme, copy, rows, unreadCount] = await Promise.all([
+    getSettingsMap(), // 요청당 1회 통읽기 — 아래 헬퍼들과 캐시 공유
     getCompanyInfo(),
     getLogoUrl(),
     getThemeColors(),
@@ -30,6 +30,7 @@ export default async function SiteLayout({
       ? prisma.notification.count({ where: { userId: user.id, read: false } })
       : Promise.resolve(0),
   ]);
+  const siteName = settings.site_name || "SIGNAL SMM";
 
   const notifications: TopBarNotification[] = rows.map((n) => ({
     id: n.id,
@@ -58,11 +59,11 @@ export default async function SiteLayout({
           dangerouslySetInnerHTML={{ __html: `:root{${themeVars}}` }}
         />
       )}
-      <Sidebar user={user} siteName={siteNameRow?.value ?? "SIGNAL SMM"} logoUrl={logoUrl} />
+      <Sidebar user={user} siteName={siteName} logoUrl={logoUrl} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           user={user}
-          siteName={siteNameRow?.value ?? "SIGNAL SMM"}
+          siteName={siteName}
           notifications={notifications}
           unreadCount={unreadCount}
           logoUrl={logoUrl}
@@ -70,7 +71,7 @@ export default async function SiteLayout({
         <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 pb-24 sm:px-8">
           {children}
         </main>
-        <Footer siteName={siteNameRow?.value ?? "SIGNAL SMM"} company={company} copyright={copy.footer_copyright} />
+        <Footer siteName={siteName} company={company} copyright={copy.footer_copyright} />
       </div>
     </div>
   );

@@ -50,6 +50,15 @@ export async function createOrder(input: {
 
   const targetUrl = input.targetUrl?.trim() ?? "";
   if (!targetUrl) return { ok: false, error: "주문 링크를 입력해주세요." };
+  // http(s)만 허용 — javascript:/data: 등 위험 스킴 차단 (관리자 화면 XSS 방지)
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(targetUrl);
+  } catch {
+    return { ok: false, error: "올바른 링크(URL)를 입력해주세요." };
+  }
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:")
+    return { ok: false, error: "http 또는 https로 시작하는 링크만 입력할 수 있습니다." };
 
   const total = product.unitPrice * qty;
   // 같은 밀리초에 동시 주문이 몰려도 충돌하지 않도록 난수 폭 확보

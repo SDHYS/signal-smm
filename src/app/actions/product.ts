@@ -28,7 +28,12 @@ export async function createProduct(input: {
     return { ok: false, error: "카테고리와 상품명을 입력해주세요." };
   if (!Number.isFinite(input.unitPrice) || input.unitPrice <= 0)
     return { ok: false, error: "단가는 1원 이상이어야 합니다." };
-  if (input.minQty < 1 || input.maxQty < input.minQty)
+  if (
+    !Number.isFinite(input.minQty) ||
+    !Number.isFinite(input.maxQty) ||
+    input.minQty < 1 ||
+    input.maxQty < input.minQty
+  )
     return { ok: false, error: "수량 범위가 올바르지 않습니다." };
 
   const last = await prisma.product.findFirst({
