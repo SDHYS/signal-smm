@@ -22,10 +22,12 @@ function StatusPill({ answered }: { answered: boolean }) {
 }
 
 export default function InquiryBoard({
+  eyebrow,
   isLoggedIn,
   inquiries,
   q,
 }: {
+  eyebrow: string;
   isLoggedIn: boolean;
   inquiries: InquiryRow[];
   q?: string;
@@ -33,7 +35,7 @@ export default function InquiryBoard({
   return (
     <div className="flex flex-col gap-8 pt-2">
       <div className="flex flex-col gap-2.5">
-        <p className="text-base font-normal text-[#767676]">담당자에게 직접 질문하기</p>
+        <p className="text-base font-normal text-[#767676]">{eyebrow}</p>
         <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">1:1 문의</h1>
       </div>
 

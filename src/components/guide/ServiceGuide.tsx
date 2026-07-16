@@ -65,28 +65,7 @@ function buildEffects(p: string) {
   ];
 }
 
-const faqs = [
-  {
-    q: "주문 후 작업은 언제 시작되나요?",
-    a: "결제(입금) 확인 후 평균 5~20분 내로 자동으로 작업이 시작됩니다.",
-  },
-  {
-    q: "비공개 계정도 가능한가요?",
-    a: "비공개 계정은 작업이 불가능합니다. 작업 시작 전 공개 계정으로 전환해 주세요.",
-  },
-  {
-    q: "팔로워가 빠지면 어떻게 하나요?",
-    a: "90일간 A/S 리필을 보장합니다. 감소분이 발생하면 고객센터로 문의해 주세요.",
-  },
-  {
-    q: "주문을 취소할 수 있나요?",
-    a: "작업이 시작되기 전이라면 취소가 가능합니다. 시작 이후에는 취소가 어렵습니다.",
-  },
-  {
-    q: "세금계산서 발행이 되나요?",
-    a: "사업자 회원은 세금계산서 발행이 가능합니다. 1:1 문의로 사업자 정보를 남겨주세요.",
-  },
-];
+
 
 function ImageBox({ src, className = "" }: { src: string; className?: string }) {
   return (
@@ -104,7 +83,11 @@ function ImageBox({ src, className = "" }: { src: string; className?: string }) 
   );
 }
 
-export default function ServiceGuide() {
+export default function ServiceGuide({ copy }: { copy: Record<string, string> }) {
+  const faqs = [1, 2, 3, 4, 5].map((n) => ({
+    q: copy[`guide_faq${n}_q`],
+    a: copy[`guide_faq${n}_a`],
+  }));
   const [tab, setTab] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -117,9 +100,9 @@ export default function ServiceGuide() {
       {/* 헤더 */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <p className="text-base font-normal text-[#767676]">이용 방법과 서비스 효과 안내</p>
+          <p className="text-base font-normal text-[#767676]">{copy.guide_eyebrow}</p>
           <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
-            서비스 안내 및 주문 방법
+            {copy.guide_title}
           </h1>
         </div>
 

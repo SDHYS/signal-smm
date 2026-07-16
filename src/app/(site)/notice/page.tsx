@@ -1,6 +1,8 @@
 import NoticeBoard from "@/components/notice/NoticeBoard";
 import { prisma } from "@/lib/prisma";
 
+import { getCopy } from "@/lib/copy";
+
 export default async function NoticePage({
   searchParams,
 }: {
@@ -11,6 +13,7 @@ export default async function NoticePage({
     ? { title: { contains: q.trim(), mode: "insensitive" as const } }
     : {};
 
+  const copy = await getCopy();
   const [notices, total] = await Promise.all([
     prisma.notice.findMany({
       where,
@@ -22,7 +25,7 @@ export default async function NoticePage({
   ]);
 
   return (
-    <NoticeBoard
+    <NoticeBoard eyebrow={copy.notice_eyebrow}
       total={total}
       q={q}
       notices={notices.map((n) => ({

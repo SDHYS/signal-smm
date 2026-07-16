@@ -48,12 +48,14 @@ export default function OrderFlow({
   products,
   query,
   favoriteIds,
+  copy,
 }: {
   isLoggedIn: boolean;
   balance: number;
   products: OrderProduct[];
   query?: string;
   favoriteIds: string[];
+  copy: Record<string, string>;
 }) {
   const router = useRouter();
   const [platformIdx, setPlatformIdx] = useState(-1);
@@ -165,7 +167,7 @@ export default function OrderFlow({
     <div className="flex flex-col gap-24">
       {/* STEP 01 — 플랫폼 선택 */}
       <section className="flex flex-col gap-7">
-        <StepHeader step="STEP 01" title="이용하실 SNS 플랫폼을 선택해 주세요." />
+        <StepHeader step="STEP 01" title={copy.step01_title} />
         <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-5 sm:gap-x-4 sm:gap-y-7 lg:grid-cols-7 xl:grid-cols-9">
           {platforms.map((p, i) => {
             const active = i === platformIdx;
@@ -210,7 +212,7 @@ export default function OrderFlow({
 
       {/* STEP 02 — 서비스 목록 */}
       <section id="step02" className="flex flex-col gap-7 scroll-mt-6">
-        <StepHeader step="STEP 02" title="사용하실 서비스 목록을 선택해 주세요." />
+        <StepHeader step="STEP 02" title={copy.step02_title} />
 
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between">
@@ -354,7 +356,7 @@ export default function OrderFlow({
 
       {/* STEP 03 — 상세 설명 (탭별 내용) */}
       <section className="flex flex-col gap-7">
-        <StepHeader step="STEP 03" title="해당 상품에 대한 상세 설명 입니다." />
+        <StepHeader step="STEP 03" title={copy.step03_title} />
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
             {detailTabs.map((t, i) => {
@@ -377,10 +379,8 @@ export default function OrderFlow({
             {detailTab === 0 && (
               <>
                 <DetailBlock title="서비스설명">
-                  <p className="text-base font-normal leading-[26px] text-gray">
-                    회원가입 이후 24시간 언제든 원하는 마케팅 상품을 간편하게 주문하세요.
-                    인스타그램 팔로워 늘리기부터 유튜브, 틱톡까지 다양한 플랫폼의 맞춤형
-                    마케팅 서비스를 제공하고 있습니다.
+                  <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                    {copy.detail_service_desc}
                   </p>
                 </DetailBlock>
                 {product && (
@@ -401,25 +401,19 @@ export default function OrderFlow({
             {detailTab === 1 && (
               <>
                 <DetailBlock title="주문링크 기입방법">
-                  <p className="text-base font-normal leading-[26px] text-gray">
-                    • 인스타그램 게시물 링크를 입력해주세요.
-                    <br />
-                    게시글 우측 상단 [메뉴] 클릭 → 링크복사 → 주문링크에 붙여넣은 후 주문
-                    <br />
-                    <span className="text-navy">
-                      [링크형식 : https://www.instagram.com/p/xxxxxxxx]
-                    </span>
+                  <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                    {copy.detail_link_guide}
                   </p>
                 </DetailBlock>
                 <DetailBlock title="주문 순서">
                   <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
-                    {"1. 플랫폼 선택 → 서비스 선택\n2. 주문 링크·수량 입력\n3. 주문금액 확인 후 [주문하기] — 보유잔액에서 즉시 차감됩니다.\n4. 주문내역에서 진행 상태를 확인하세요."}
+                    {copy.detail_order_steps}
                   </p>
                 </DetailBlock>
                 <div className="flex flex-col gap-2">
                   <p className="text-lg font-medium text-navy">주문 시작시간</p>
                   <p className="text-base font-normal leading-[26px] text-gray">
-                    평균 5~20분내로 자동으로 작업이 시작됩니다.
+                    {copy.detail_start_time}
                   </p>
                 </div>
               </>
@@ -428,28 +422,26 @@ export default function OrderFlow({
             {detailTab === 2 && (
               <DetailBlock title="주의 사항">
                 <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
-                  {"• 비공개 계정은 작업이 불가능합니다. 주문 전 공개 상태로 전환해주세요.\n• 작업 중 계정·게시물을 삭제하거나 비공개로 전환하면 처리가 불가하며 환불되지 않습니다.\n• 동일 링크는 이전 주문이 완료된 후 재주문해주세요. 중복 주문 시 누락될 수 있습니다.\n• 링크를 잘못 입력해 진행된 주문은 취소·환불이 어렵습니다."}
+                  {copy.detail_caution}
                 </p>
               </DetailBlock>
             )}
 
             {detailTab === 3 && (
               <>
-                <DetailBlock title="Q. 주문 후 언제 시작되나요?">
-                  <p className="text-base font-normal leading-[26px] text-gray">
-                    평균 5~20분 내 자동으로 시작되며, 서비스에 따라 최대 몇 시간이 걸릴 수
-                    있습니다.
+                <DetailBlock title={copy.detail_faq1_q}>
+                  <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                    {copy.detail_faq1_a}
                   </p>
                 </DetailBlock>
-                <DetailBlock title="Q. 주문을 취소할 수 있나요?">
-                  <p className="text-base font-normal leading-[26px] text-gray">
-                    작업 시작 전이라면 1:1 문의로 요청해주세요. 관리자가 환불 처리하면 결제
-                    금액이 잔액으로 복구됩니다.
+                <DetailBlock title={copy.detail_faq2_q}>
+                  <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                    {copy.detail_faq2_a}
                   </p>
                 </DetailBlock>
-                <DetailBlock title="Q. 수량이 다 안 들어오면 어떻게 되나요?">
-                  <p className="text-base font-normal leading-[26px] text-gray">
-                    미완료 수량은 확인 후 잔액으로 환불 처리해드립니다. 1:1 문의로 남겨주세요.
+                <DetailBlock title={copy.detail_faq3_q}>
+                  <p className="whitespace-pre-line text-base font-normal leading-[26px] text-gray">
+                    {copy.detail_faq3_a}
                   </p>
                 </DetailBlock>
               </>
@@ -460,7 +452,7 @@ export default function OrderFlow({
 
       {/* STEP 04 — 주문 링크 */}
       <section className="flex flex-col gap-7">
-        <StepHeader step="STEP 04" title="주문 링크를 입력해주세요." />
+        <StepHeader step="STEP 04" title={copy.step04_title} />
         <input
           value={link}
           onChange={(e) => setLink(e.target.value)}
@@ -471,7 +463,7 @@ export default function OrderFlow({
 
       {/* STEP 05 — 수량 */}
       <section className="flex flex-col gap-7">
-        <StepHeader step="STEP 05" title="구매 수량을 입력해주세요." />
+        <StepHeader step="STEP 05" title={copy.step05_title} />
         <div className="flex flex-col gap-3">
           <input
             value={qty}
@@ -489,7 +481,7 @@ export default function OrderFlow({
 
       {/* STEP 06 — 주문금액 */}
       <section className="flex flex-col gap-7">
-        <StepHeader step="STEP 06" title="주문금액" />
+        <StepHeader step="STEP 06" title={copy.step06_title} />
         <div className="flex flex-col items-start gap-1 rounded-lg border border-line bg-white px-5 py-4 text-base font-normal text-navy sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-7 sm:text-lg">
           <span>₩{amount.toLocaleString()}</span>
           <span className="text-sm text-gray">
@@ -509,7 +501,7 @@ export default function OrderFlow({
           {loading ? "주문 중..." : "주문하기"}
         </button>
         <p className="text-sm font-normal text-navy">
-          주문 시 보유잔액에서 즉시 차감됩니다.
+          {copy.order_footnote}
         </p>
       </div>
     </div>

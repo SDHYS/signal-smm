@@ -4,10 +4,12 @@ import { Search } from "lucide-react";
 export type NoticeRow = { id: string; title: string; date: string };
 
 export default function NoticeBoard({
+  eyebrow,
   notices,
   total,
   q,
 }: {
+  eyebrow: string;
   notices: NoticeRow[];
   total: number;
   q?: string;
@@ -15,9 +17,7 @@ export default function NoticeBoard({
   return (
     <div className="flex flex-col gap-8 pt-2">
       <div className="flex flex-col gap-2.5">
-        <p className="text-base font-normal text-[#767676]">
-          주요 서비스 소식 및 안내 확인
-        </p>
+        <p className="text-base font-normal text-[#767676]">{eyebrow}</p>
         <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">공지사항</h1>
       </div>
 

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Zap, ShieldCheck, Users, Headset } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCopy } from "@/lib/copy";
 
 export default async function AboutPage() {
+  const copy = await getCopy();
   const rows = await prisma.setting.findMany({
     where: { key: { in: ["site_name", "about_intro"] } },
   });
@@ -13,18 +15,18 @@ export default async function AboutPage() {
   const values = [
     {
       icon: <Zap size={32} strokeWidth={1.5} className="text-orange" />,
-      title: "빠른 처리",
-      desc: "주문 후 평균 5~20분 내 자동으로 작업이 시작됩니다. 24시간 언제든 주문할 수 있습니다.",
+      title: copy.about_value1_title,
+      desc: copy.about_value1_desc,
     },
     {
       icon: <Users size={32} strokeWidth={1.5} className="text-blue" />,
-      title: "실사용자 품질",
-      desc: "실제 활동하는 사용자 기반으로 자연스럽게 반영되어 계정 성장에 도움이 됩니다.",
+      title: copy.about_value2_title,
+      desc: copy.about_value2_desc,
     },
     {
       icon: <ShieldCheck size={32} strokeWidth={1.5} className="text-[#04B014]" />,
-      title: "안심 운영",
-      desc: "무통장입금 수동 확인과 A/S 리필 정책으로 안전하게 이용할 수 있습니다.",
+      title: copy.about_value3_title,
+      desc: copy.about_value3_desc,
     },
   ];
 
@@ -33,7 +35,7 @@ export default async function AboutPage() {
       {/* 헤더 */}
       <div className="flex flex-col gap-2.5">
         <p className="text-base font-normal text-[#767676]">
-          SNS 마케팅 파트너
+          {copy.about_eyebrow}
         </p>
         <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
           회사 소개
@@ -78,8 +80,7 @@ export default async function AboutPage() {
           <h2 className="text-xl font-semibold text-navy">운영 안내</h2>
         </div>
         <p className="text-base font-normal leading-[26px] text-gray">
-          문의는 1:1 문의 게시판과 고객센터 채널을 통해 접수됩니다. 충전 입금
-          확인은 관리자가 순차적으로 처리하며, 완료 시 알림으로 안내드립니다.
+          {copy.about_ops}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Link

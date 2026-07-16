@@ -13,7 +13,13 @@ export type BlogCard = {
 
 const categories = ["전체보기", "인스타그램", "네이버", "유튜브", "틱톡", "업데이트"];
 
-export default function BlogList({ posts }: { posts: BlogCard[] }) {
+export default function BlogList({
+  eyebrow,
+  posts,
+}: {
+  eyebrow: string;
+  posts: BlogCard[];
+}) {
   const [cat, setCat] = useState(0);
   const selected = categories[cat];
   const visible = cat === 0 ? posts : posts.filter((p) => p.category === selected);
@@ -22,9 +28,7 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
     <div className="flex flex-col gap-6 pt-2">
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <p className="text-base font-normal text-[#767676]">
-            SNS 마케팅의 모든 것을 알려드립니다.
-          </p>
+          <p className="text-base font-normal text-[#767676]">{eyebrow}</p>
           <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">
             SNS 서포터 블로그
           </h1>

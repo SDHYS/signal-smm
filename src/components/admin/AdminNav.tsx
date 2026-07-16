@@ -11,6 +11,7 @@ const items = [
   { label: "공지사항", href: "/admin/notices" },
   { label: "블로그", href: "/admin/blog" },
   { label: "1:1 문의", href: "/admin/inquiries" },
+  { label: "문구", href: "/admin/texts" },
   { label: "설정", href: "/admin/settings" },
 ];
 

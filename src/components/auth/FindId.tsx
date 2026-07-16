@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { findUsername } from "@/app/actions/user";
 
-export default function FindId() {
+export default function FindId({ eyebrow }: { eyebrow: string }) {
   const [email, setEmail] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function FindId() {
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-8 pt-10">
       <div className="flex flex-col gap-2.5">
-        <p className="text-base font-normal text-[#767676]">계정 찾기</p>
+        <p className="text-base font-normal text-[#767676]">{eyebrow}</p>
         <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">아이디 찾기</h1>
       </div>
 

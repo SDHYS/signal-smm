@@ -107,4 +107,23 @@ test.describe("관리자(로그인 세션)", () => {
     await page.goto("/support");
     await expect(page.getByRole("link", { name: "1:1 문의 바로가기" }).first()).toBeVisible();
   });
+
+  test("문구 관리 — 수정이 유저 페이지에 반영, 비우면 기본값 복귀", async ({ page }) => {
+    // 히어로 윗줄 문구 변경
+    await page.goto("/admin/texts");
+    await page.getByLabel("히어로 윗줄").fill("QA 커스텀 히어로 문구입니다");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다", { exact: false })).toBeVisible({ timeout: 15_000 });
+
+    await page.goto("/");
+    await expect(page.getByText("QA 커스텀 히어로 문구입니다")).toBeVisible();
+
+    // 원복 (빈 값 → 기본 문구)
+    await page.goto("/admin/texts");
+    await page.getByLabel("히어로 윗줄").fill("");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다", { exact: false })).toBeVisible({ timeout: 15_000 });
+    await page.goto("/");
+    await expect(page.getByText("인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!")).toBeVisible();
+  });
 });

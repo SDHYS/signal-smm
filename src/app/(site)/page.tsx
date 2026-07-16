@@ -2,6 +2,7 @@ import HeroSection from "@/components/home/HeroSection";
 import OrderIntro from "@/components/home/OrderIntro";
 import OrderFlow from "@/components/home/OrderFlow";
 import { getCurrentUser } from "@/lib/auth";
+import { getCopy } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
 
 function mask(username: string) {
@@ -22,7 +23,7 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const [user, products, latestOrder, siteNameRow] = await Promise.all([
+  const [user, products, latestOrder, siteNameRow, copy] = await Promise.all([
     getCurrentUser(),
     prisma.product.findMany({
       where: { isActive: true },
@@ -48,6 +49,7 @@ export default async function Home({
       },
     }),
     prisma.setting.findUnique({ where: { key: "site_name" } }),
+    getCopy(),
   ]);
 
   const favorites = user
@@ -65,14 +67,15 @@ export default async function Home({
 
   return (
     <div className="flex flex-col gap-8 pt-2">
-      <HeroSection siteName={siteNameRow?.value ?? "SIGNAL SMM"} />
-      <OrderIntro ticker={ticker} />
+      <HeroSection siteName={siteNameRow?.value ?? "SIGNAL SMM"} copy={copy} />
+      <OrderIntro ticker={ticker} copy={copy} />
       <OrderFlow
         isLoggedIn={!!user}
         balance={user?.balance ?? 0}
         products={products}
         query={q}
         favoriteIds={favorites.map((f) => f.productId)}
+        copy={copy}
       />
     </div>
   );

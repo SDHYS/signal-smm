@@ -13,10 +13,10 @@ type Card = {
   imgH: number;
 };
 
-const cards: Card[] = [
+const buildCards = (copy: Record<string, string>): Card[] => [
   {
-    caption: "우리의 서비스를 더 쉽고 편리하게 활용하는 방법",
-    title: "서비스 안내",
+    caption: copy.hero_card1_caption,
+    title: copy.hero_card1_title,
     href: "/guide",
     bg: "#EF552B",
     captionColor: "rgba(255,255,255,0.70)",
@@ -26,8 +26,8 @@ const cards: Card[] = [
     imgH: 98,
   },
   {
-    caption: "무엇을 도와드릴까요? 편하게 남겨주세요",
-    title: "1:1 문의",
+    caption: copy.hero_card2_caption,
+    title: copy.hero_card2_title,
     href: "/inquiry",
     bg: "#FFC833",
     captionColor: "rgba(31,35,83,0.70)",
@@ -37,8 +37,8 @@ const cards: Card[] = [
     imgH: 97,
   },
   {
-    caption: "자주 묻는 질문부터 상담까지 한눈에",
-    title: "고객센터",
+    caption: copy.hero_card3_caption,
+    title: copy.hero_card3_title,
     href: "/support",
     bg: "#52CC8F",
     captionColor: "rgba(31,35,83,0.70)",
@@ -49,16 +49,23 @@ const cards: Card[] = [
   },
 ];
 
-export default function HeroSection({ siteName }: { siteName: string }) {
+export default function HeroSection({
+  siteName,
+  copy,
+}: {
+  siteName: string;
+  copy: Record<string, string>;
+}) {
+  const cards = buildCards(copy);
   return (
     <section className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
         <p className="text-base font-normal text-gray">
-          인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!
+          {copy.hero_eyebrow}
         </p>
         <h1 className="text-[26px] font-bold leading-[1.35] sm:text-[32px] lg:text-[40px] lg:leading-[1.3]">
           <span className="text-orange">{siteName}</span>
-          <span className="text-navy">에 오신것을 환영합니다!</span>
+          <span className="text-navy">{copy.hero_title_suffix}</span>
         </h1>
       </div>
 

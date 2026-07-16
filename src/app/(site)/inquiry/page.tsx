@@ -2,6 +2,8 @@ import InquiryBoard, { type InquiryRow } from "@/components/inquiry/InquiryBoard
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import { getCopy } from "@/lib/copy";
+
 export default async function InquiryPage({
   searchParams,
 }: {
@@ -9,6 +11,7 @@ export default async function InquiryPage({
 }) {
   const { q } = await searchParams;
   const user = await getCurrentUser();
+  const copy = await getCopy();
   const rows = user
     ? await prisma.inquiry.findMany({
         where: {
@@ -30,5 +33,5 @@ export default async function InquiryPage({
     answered: q.status === "ANSWERED",
   }));
 
-  return <InquiryBoard isLoggedIn={!!user} inquiries={inquiries} q={q} />;
+  return <InquiryBoard eyebrow={copy.inquiry_eyebrow} isLoggedIn={!!user} inquiries={inquiries} q={q} />;
 }

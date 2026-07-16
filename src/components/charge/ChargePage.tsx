@@ -70,11 +70,13 @@ export default function ChargePage({
   balance,
   bank,
   history,
+  copy,
 }: {
   isLoggedIn: boolean;
   balance: number;
   bank: Bank;
   history: History[];
+  copy: Record<string, string>;
 }) {
   const router = useRouter();
   const [amount, setAmount] = useState(0);
@@ -147,8 +149,8 @@ export default function ChargePage({
       {/* 헤더 */}
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <p className="text-base font-normal text-[#767676]">무통장입금으로 간편하게 잔액 충전</p>
-          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">잔액충전</h1>
+          <p className="text-base font-normal text-[#767676]">{copy.charge_eyebrow}</p>
+          <h1 className="text-[26px] font-bold leading-9 sm:text-[34px] sm:leading-[46px] lg:text-[40px] lg:leading-[52px] text-black">{copy.charge_title}</h1>
         </div>
         <div className="flex items-center gap-3">
           <span className="rounded-full bg-blue px-6 py-3 text-sm font-medium text-white">
@@ -221,10 +223,8 @@ export default function ChargePage({
               placeholder="입금자명을 작성해주세요"
               className="w-full rounded-lg border border-line bg-white px-5 py-4 text-base font-normal sm:px-6 sm:py-7 sm:text-lg text-navy placeholder:text-gray focus:border-blue focus:outline-none"
             />
-            <p className="text-sm font-normal leading-6 text-navy">
-              입금자명이 다를 경우 자동충전이 안됩니다.
-              <br />
-              5글자 이상 예금주명도 정상반영 처리 됩니다.
+            <p className="whitespace-pre-line text-sm font-normal leading-6 text-navy">
+              {copy.charge_depositor_note}
             </p>
           </div>
         </section>
@@ -326,15 +326,11 @@ export default function ChargePage({
               <div className="flex flex-col gap-3 rounded-2xl bg-soft p-10">
                 <p className="text-lg font-medium leading-[26px] text-navy">안내사항</p>
                 <div className="text-base leading-[26px]">
-                  <p>
-                    <span className="text-gray">• </span>
-                    <span className="font-medium text-navy">충전 신청 후 입금을 진행해야 합니다.</span>
-                    <span className="text-gray"> 신청 시 계좌번호를 확인할 수 있습니다.</span>
-                  </p>
-                  <p className="text-gray">• 현금영수증 및 세금계산서는 영업일 24시간 내 자동 발행됩니다.</p>
-                  <p className="text-gray">
-                    • 입금자명이 신청과 다르면 자동 반영되지 않을 수 있습니다.
-                  </p>
+                  {copy.charge_notice.split("\n").map((line, i) => (
+                    <p key={i} className="text-gray">
+                      • {line}
+                    </p>
+                  ))}
                 </div>
               </div>
             </div>

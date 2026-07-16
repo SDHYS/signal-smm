@@ -1,11 +1,13 @@
 import ChargePage from "@/components/charge/ChargePage";
 import { getCurrentUser } from "@/lib/auth";
 import { getBankInfo } from "@/lib/settings";
+import { getCopy } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
 
 export default async function Charge() {
   const user = await getCurrentUser();
   const bank = await getBankInfo();
+  const copy = await getCopy();
 
   const history = user
     ? await prisma.chargeRequest.findMany({
@@ -28,6 +30,7 @@ export default async function Charge() {
       isLoggedIn={!!user}
       balance={user?.balance ?? 0}
       bank={bank}
+      copy={copy}
       history={history.map((h) => ({
         id: h.id,
         amount: h.amount,

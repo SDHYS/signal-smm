@@ -1,0 +1,160 @@
+import "server-only";
+import { prisma } from "./prisma";
+
+/**
+ * 사이트 문구 레지스트리 — 유저 페이지의 안내/마케팅 문구를 어드민에서 관리한다.
+ *
+ * 모든 키는 Setting 테이블에 `copy_` 접두사로 저장되고, 값이 비어 있으면
+ * 아래 default(현재 하드코딩돼 있던 원문)가 그대로 쓰인다.
+ * {siteName} 플레이스홀더는 렌더 시 사이트명으로 치환된다.
+ */
+
+export type CopyItem = {
+  key: string; // copy_ 접두사 제외한 짧은 키
+  label: string;
+  default: string;
+  textarea?: boolean; // 줄바꿈 있는 문단
+  hint?: string;
+};
+
+export type CopySection = { title: string; page: string; items: CopyItem[] };
+
+export const COPY_SECTIONS: CopySection[] = [
+  {
+    title: "메인 — 상단 히어로",
+    page: "/",
+    items: [
+      { key: "hero_eyebrow", label: "히어로 윗줄", default: "인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!" },
+      { key: "hero_title_suffix", label: "환영 타이틀 (사이트명 뒤)", default: "에 오신것을 환영합니다!", hint: "사이트명 + 이 문구로 표시됩니다." },
+      { key: "hero_card1_caption", label: "배너1(서비스 안내) 설명", default: "우리의 서비스를 더 쉽고 편리하게 활용하는 방법" },
+      { key: "hero_card1_title", label: "배너1 제목", default: "서비스 안내" },
+      { key: "hero_card2_caption", label: "배너2(1:1 문의) 설명", default: "무엇을 도와드릴까요? 편하게 남겨주세요" },
+      { key: "hero_card2_title", label: "배너2 제목", default: "1:1 문의" },
+      { key: "hero_card3_caption", label: "배너3(고객센터) 설명", default: "자주 묻는 질문부터 상담까지 한눈에" },
+      { key: "hero_card3_title", label: "배너3 제목", default: "고객센터" },
+    ],
+  },
+  {
+    title: "메인 — 주문하기 섹션",
+    page: "/",
+    items: [
+      { key: "order_title", label: "섹션 제목", default: "주문하기" },
+      { key: "order_desc", label: "섹션 설명", default: "한국인 인스타 팔로워 구매, 인스타그램 좋아요 늘리기 비즈니스 성장을 시작하세요" },
+      { key: "order_guide_link", label: "우측 가이드 링크 문구", default: "신규 가이드 제작하기" },
+      { key: "order_notice", label: "안내 박스", textarea: true, default: "회원가입 이후 SNS서포터에서 24시간 언제든 원하는 마케팅 상품을 간편하게 주문하세요.\n인스타그램 팔로워 늘리기부터 유튜브, 페이스북까지 다양한 플랫폼의 맞춤형 마케팅 서비스를 제공하고 있습니다." },
+      { key: "ticker_empty", label: "티커 기본 문구 (주문 없을 때)", default: "지금 바로 첫 주문을 시작해보세요!" },
+      { key: "step01_title", label: "STEP01 제목", default: "이용하실 SNS 플랫폼을 선택해 주세요." },
+      { key: "step02_title", label: "STEP02 제목", default: "사용하실 서비스 목록을 선택해 주세요." },
+      { key: "step03_title", label: "STEP03 제목", default: "해당 상품에 대한 상세 설명 입니다." },
+      { key: "step04_title", label: "STEP04 제목", default: "주문 링크를 입력해주세요." },
+      { key: "step05_title", label: "STEP05 제목", default: "구매 수량을 입력해주세요." },
+      { key: "step06_title", label: "STEP06 제목", default: "주문금액" },
+      { key: "order_footnote", label: "주문 버튼 아래 문구", default: "주문 시 보유잔액에서 즉시 차감됩니다." },
+    ],
+  },
+  {
+    title: "메인 — STEP03 상세 탭",
+    page: "/",
+    items: [
+      { key: "detail_service_desc", label: "[서비스 설명] 기본 문구", textarea: true, default: "회원가입 이후 24시간 언제든 원하는 마케팅 상품을 간편하게 주문하세요. 인스타그램 팔로워 늘리기부터 유튜브, 틱톡까지 다양한 플랫폼의 맞춤형 마케팅 서비스를 제공하고 있습니다." },
+      { key: "detail_link_guide", label: "[주문 방법] 링크 기입방법", textarea: true, default: "• 인스타그램 게시물 링크를 입력해주세요.\n게시글 우측 상단 [메뉴] 클릭 → 링크복사 → 주문링크에 붙여넣은 후 주문\n[링크형식 : https://www.instagram.com/p/xxxxxxxx]" },
+      { key: "detail_order_steps", label: "[주문 방법] 주문 순서", textarea: true, default: "1. 플랫폼 선택 → 서비스 선택\n2. 주문 링크·수량 입력\n3. 주문금액 확인 후 [주문하기] — 보유잔액에서 즉시 차감됩니다.\n4. 주문내역에서 진행 상태를 확인하세요." },
+      { key: "detail_start_time", label: "[주문 방법] 주문 시작시간", default: "평균 5~20분내로 자동으로 작업이 시작됩니다." },
+      { key: "detail_caution", label: "[주의 사항] 본문", textarea: true, default: "• 비공개 계정은 작업이 불가능합니다. 주문 전 공개 상태로 전환해주세요.\n• 작업 중 계정·게시물을 삭제하거나 비공개로 전환하면 처리가 불가하며 환불되지 않습니다.\n• 동일 링크는 이전 주문이 완료된 후 재주문해주세요. 중복 주문 시 누락될 수 있습니다.\n• 링크를 잘못 입력해 진행된 주문은 취소·환불이 어렵습니다." },
+      { key: "detail_faq1_q", label: "[FAQ] 질문 1", default: "Q. 주문 후 언제 시작되나요?" },
+      { key: "detail_faq1_a", label: "[FAQ] 답변 1", textarea: true, default: "평균 5~20분 내 자동으로 시작되며, 서비스에 따라 최대 몇 시간이 걸릴 수 있습니다." },
+      { key: "detail_faq2_q", label: "[FAQ] 질문 2", default: "Q. 주문을 취소할 수 있나요?" },
+      { key: "detail_faq2_a", label: "[FAQ] 답변 2", textarea: true, default: "작업 시작 전이라면 1:1 문의로 요청해주세요. 관리자가 환불 처리하면 결제 금액이 잔액으로 복구됩니다." },
+      { key: "detail_faq3_q", label: "[FAQ] 질문 3", default: "Q. 수량이 다 안 들어오면 어떻게 되나요?" },
+      { key: "detail_faq3_a", label: "[FAQ] 답변 3", textarea: true, default: "미완료 수량은 확인 후 잔액으로 환불 처리해드립니다. 1:1 문의로 남겨주세요." },
+    ],
+  },
+  {
+    title: "서비스 안내",
+    page: "/guide",
+    items: [
+      { key: "guide_eyebrow", label: "머리말", default: "이용 방법과 서비스 효과 안내" },
+      { key: "guide_title", label: "페이지 제목", default: "서비스 안내 및 주문 방법" },
+      { key: "guide_faq1_q", label: "FAQ 질문 1", default: "주문 후 작업은 언제 시작되나요?" },
+      { key: "guide_faq1_a", label: "FAQ 답변 1", textarea: true, default: "결제(입금) 확인 후 평균 5~20분 내로 자동으로 작업이 시작됩니다." },
+      { key: "guide_faq2_q", label: "FAQ 질문 2", default: "비공개 계정도 가능한가요?" },
+      { key: "guide_faq2_a", label: "FAQ 답변 2", textarea: true, default: "비공개 계정은 작업이 불가능합니다. 작업 시작 전 공개 계정으로 전환해 주세요." },
+      { key: "guide_faq3_q", label: "FAQ 질문 3", default: "팔로워가 빠지면 어떻게 하나요?" },
+      { key: "guide_faq3_a", label: "FAQ 답변 3", textarea: true, default: "90일간 A/S 리필을 보장합니다. 감소분이 발생하면 고객센터로 문의해 주세요." },
+      { key: "guide_faq4_q", label: "FAQ 질문 4", default: "주문을 취소할 수 있나요?" },
+      { key: "guide_faq4_a", label: "FAQ 답변 4", textarea: true, default: "작업이 시작되기 전이라면 취소가 가능합니다. 시작 이후에는 취소가 어렵습니다." },
+      { key: "guide_faq5_q", label: "FAQ 질문 5", default: "세금계산서 발행이 되나요?" },
+      { key: "guide_faq5_a", label: "FAQ 답변 5", textarea: true, default: "사업자 회원은 세금계산서 발행이 가능합니다. 1:1 문의로 사업자 정보를 남겨주세요." },
+    ],
+  },
+  {
+    title: "잔액충전",
+    page: "/charge",
+    items: [
+      { key: "charge_eyebrow", label: "머리말", default: "무통장입금으로 간편하게 잔액 충전" },
+      { key: "charge_title", label: "페이지 제목", default: "잔액충전" },
+      { key: "charge_depositor_note", label: "입금자명 안내", textarea: true, default: "입금자명이 다를 경우 자동충전이 안됩니다.\n5글자 이상 예금주명도 정상반영 처리 됩니다." },
+      { key: "charge_notice", label: "안내사항 (줄당 1항목)", textarea: true, default: "충전 신청 후 입금을 진행해야 합니다. 신청 시 계좌번호를 확인할 수 있습니다.\n현금영수증 및 세금계산서는 영업일 24시간 내 자동 발행됩니다.\n입금자명이 신청과 다르면 자동 반영되지 않을 수 있습니다." },
+    ],
+  },
+  {
+    title: "게시판/기타 페이지 머리말",
+    page: "여러 페이지",
+    items: [
+      { key: "notice_eyebrow", label: "공지사항 머리말", default: "주요 서비스 소식 및 안내 확인" },
+      { key: "inquiry_eyebrow", label: "1:1 문의 머리말", default: "담당자에게 직접 질문하기" },
+      { key: "blog_eyebrow", label: "블로그 머리말", default: "SNS 마케팅의 모든 것을 알려드립니다." },
+      { key: "orders_eyebrow", label: "주문내역 머리말", default: "주문 · 환불 내역 확인" },
+      { key: "findid_eyebrow", label: "아이디 찾기 머리말", default: "계정 찾기" },
+    ],
+  },
+  {
+    title: "고객센터",
+    page: "/support",
+    items: [
+      { key: "support_eyebrow", label: "머리말", default: "여기서 먼저 답을 찾아보세요." },
+      { key: "support_title", label: "페이지 제목", default: "궁금하신게 있으신가요?" },
+      { key: "support_kakao_desc", label: "카카오톡 카드 설명", default: "실시간 채팅으로 가장 빠르게 답변받을 수 있는 채널입니다." },
+      { key: "support_phone_desc", label: "전화 카드 설명", default: "통화로 자세한 상담을 원하시면 아래 번호로 연락 주세요." },
+      { key: "support_proposal_desc", label: "제안서 카드 설명", default: "서비스 구성과 가격이 정리된 제안서를 확인해 보세요." },
+      { key: "support_portfolio_desc", label: "포트폴리오 카드 설명", default: "그동안 진행한 마케팅 성과와 사례를 모아두었습니다." },
+    ],
+  },
+  {
+    title: "회사소개",
+    page: "/about",
+    items: [
+      { key: "about_eyebrow", label: "머리말", default: "SNS 마케팅 파트너" },
+      { key: "about_value1_title", label: "핵심가치1 제목", default: "빠른 처리" },
+      { key: "about_value1_desc", label: "핵심가치1 설명", textarea: true, default: "주문 후 평균 5~20분 내 자동으로 작업이 시작됩니다. 24시간 언제든 주문할 수 있습니다." },
+      { key: "about_value2_title", label: "핵심가치2 제목", default: "실사용자 품질" },
+      { key: "about_value2_desc", label: "핵심가치2 설명", textarea: true, default: "실제 활동하는 사용자 기반으로 자연스럽게 반영되어 계정 성장에 도움이 됩니다." },
+      { key: "about_value3_title", label: "핵심가치3 제목", default: "안심 운영" },
+      { key: "about_value3_desc", label: "핵심가치3 설명", textarea: true, default: "무통장입금 수동 확인과 A/S 리필 정책으로 안전하게 이용할 수 있습니다." },
+      { key: "about_ops", label: "운영 안내 본문", textarea: true, default: "문의는 1:1 문의 게시판과 고객센터 채널을 통해 접수됩니다. 충전 입금 확인은 관리자가 순차적으로 처리하며, 완료 시 알림으로 안내드립니다." },
+    ],
+  },
+];
+
+export const COPY_KEYS = new Set(
+  COPY_SECTIONS.flatMap((s) => s.items.map((i) => `copy_${i.key}`)),
+);
+
+const DEFAULTS: Record<string, string> = Object.fromEntries(
+  COPY_SECTIONS.flatMap((s) => s.items.map((i) => [i.key, i.default])),
+);
+
+export type Copy = Record<string, string>;
+
+/** 저장된 문구 + 기본값 병합. 키는 접두사 없는 짧은 키. */
+export async function getCopy(): Promise<Copy> {
+  const rows = await prisma.setting.findMany({
+    where: { key: { startsWith: "copy_" } },
+  });
+  const saved = Object.fromEntries(
+    rows
+      .filter((r) => r.value.trim() !== "")
+      .map((r) => [r.key.slice("copy_".length), r.value]),
+  );
+  return { ...DEFAULTS, ...saved };
+}

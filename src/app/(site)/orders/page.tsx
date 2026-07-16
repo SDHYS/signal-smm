@@ -3,6 +3,7 @@ import OrderHistory, {
 } from "@/components/orders/OrderHistory";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getCopy } from "@/lib/copy";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING_PAYMENT: "입금대기",
@@ -42,7 +43,7 @@ function groupByDate(
 }
 
 export default async function OrdersPage() {
-  const user = await getCurrentUser();
+  const [user, copy] = await Promise.all([getCurrentUser(), getCopy()]);
   const all = user
     ? await prisma.order.findMany({
         where: { userId: user.id },
@@ -63,6 +64,7 @@ export default async function OrdersPage() {
 
   return (
     <OrderHistory
+      eyebrow={copy.orders_eyebrow}
       isLoggedIn={!!user}
       orderGroups={groupByDate(orders)}
       refundGroups={groupByDate(refunds)}
