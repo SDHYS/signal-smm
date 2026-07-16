@@ -5,10 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { getVatRate } from "@/lib/settings";
 
 export type ActionResult = { ok: boolean; error?: string; id?: string };
 
-const VAT_RATE = 0.1;
 const MAX_CHARGE = 10_000_000; // 1회 최대 충전 금액
 
 export async function createChargeRequest(input: {
@@ -35,7 +35,7 @@ export async function createChargeRequest(input: {
   const depositorName = input.depositorName?.trim() ?? "";
   if (!depositorName) return { ok: false, error: "입금자명을 입력해주세요." };
 
-  const vat = Math.round(amount * VAT_RATE);
+  const vat = Math.round((amount * (await getVatRate())) / 100);
   const total = amount + vat;
 
   // 영수증 상세: 빈 값 제거 후 저장

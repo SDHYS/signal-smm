@@ -173,4 +173,28 @@ test.describe("관리자(로그인 세션)", () => {
     await page.goto("/terms");
     await expect(page.getByText("이용약관을 준비 중입니다.")).toBeVisible();
   });
+
+  test("커스터마이징 — 테마 색상이 사이트 CSS 변수에 반영", async ({ page }) => {
+    await page.goto("/admin/settings");
+    await page.getByLabel("포인트 색상 (버튼·강조)", { exact: true }).fill("#10b981");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+
+    await page.goto("/");
+    const orange = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue("--color-orange").trim(),
+    );
+    expect(orange).toBe("#10b981");
+
+    // 원복 → 기본 테마
+    await page.goto("/admin/settings");
+    await page.getByLabel("포인트 색상 (버튼·강조)", { exact: true }).fill("");
+    await page.getByRole("button", { name: "전체 저장" }).click();
+    await expect(page.getByText("저장되었습니다.")).toBeVisible({ timeout: 15_000 });
+    await page.goto("/");
+    const restored = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue("--color-orange").trim(),
+    );
+    expect(restored).toBe("#ef552b");
+  });
 });

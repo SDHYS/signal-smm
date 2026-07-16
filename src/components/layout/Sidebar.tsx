@@ -52,9 +52,11 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 export default function Sidebar({
   user,
   siteName,
+  logoUrl,
 }: {
   user: CurrentUser | null;
   siteName: string;
+  logoUrl: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -75,7 +77,7 @@ export default function Sidebar({
           <Link href="/" className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/로고텍스트일체형.png"
+              src={logoUrl}
               alt={siteName}
               className="h-[30px] w-auto"
             />

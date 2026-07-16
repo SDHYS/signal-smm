@@ -26,42 +26,31 @@ const terms: Record<string, { f: string; l: string; feed: string }> = {
   틱톡: { f: "팔로워", l: "조회수", feed: "For You 피드" },
 };
 
-function buildCards(p: string) {
+// 어드민 템플릿 문구의 치환자({플랫폼} 등)를 탭별 용어로 치환
+function fill(tmpl: string, p: string) {
+  const t = terms[p];
+  return tmpl
+    .replaceAll("{플랫폼}", p)
+    .replaceAll("{팔로워}", t.f)
+    .replaceAll("{좋아요}", t.l)
+    .replaceAll("{피드}", t.feed);
+}
+
+function buildCards(p: string, copy: Record<string, string>) {
   const t = terms[p];
   return [
-    {
-      title: `${p} ${t.f}`,
-      desc: `한국인 실사용자 ${t.f}가 자연스럽게 늘어납니다. 성별·연령 타겟팅은 물론, 90일간 A/S 리필까지 확실히 보장합니다.`,
-    },
-    {
-      title: `${p} ${t.l}`,
-      desc: `게시물 노출과 도달률을 한 번에! 부담 없는 가격으로 시작하는 ${t.l} 서비스와 편리한 자동 옵션까지 만나보세요.`,
-    },
-    {
-      title: `${p} 인기게시물`,
-      desc: `인기 게시물 상위 노출로 검색 최상단을 점유하세요. ${t.l}, 도달, 인사이트를 종합 부스팅하여 자연 유입을 극대화합니다.`,
-    },
+    { title: `${p} ${t.f}`, desc: fill(copy.guide_card1_desc, p) },
+    { title: `${p} ${t.l}`, desc: fill(copy.guide_card2_desc, p) },
+    { title: `${p} 인기게시물`, desc: fill(copy.guide_card3_desc, p) },
   ];
 }
 
-function buildEffects(p: string) {
+function buildEffects(p: string, copy: Record<string, string>) {
   const t = terms[p];
   return [
-    {
-      label: "상품효과 01",
-      title: `${p} ${t.f} 구매 효과`,
-      desc: `${p} ${t.f} 구매는 계정의 첫인상을 결정합니다. ${t.f} 수가 많은 계정은 신규 방문자에게 신뢰감을 주고, ${p} 알고리즘이 콘텐츠를 더 넓은 범위에 노출시키는 계기가 됩니다.`,
-    },
-    {
-      label: "상품효과 02",
-      title: `${p} ${t.l} 구매 효과`,
-      desc: `${t.l}는 게시물의 품질 신호입니다. ${t.l}가 많은 게시물은 알고리즘에 의해 더 많은 사용자의 ${t.feed}에 노출되어 자연 도달률이 크게 향상됩니다.`,
-    },
-    {
-      label: "상품효과 03",
-      title: `${p} 비즈니스 성장 효과`,
-      desc: `${t.f}와 ${t.l}의 시너지 효과로 ${p} 계정이 종합적으로 성장합니다. 브랜드 인지도, 매출, 협업 기회까지 비즈니스 전반의 성과를 끌어올릴 수 있습니다.`,
-    },
+    { label: "상품효과 01", title: `${p} ${t.f} 구매 효과`, desc: fill(copy.guide_effect1_desc, p) },
+    { label: "상품효과 02", title: `${p} ${t.l} 구매 효과`, desc: fill(copy.guide_effect2_desc, p) },
+    { label: "상품효과 03", title: `${p} 비즈니스 성장 효과`, desc: fill(copy.guide_effect3_desc, p) },
   ];
 }
 
@@ -92,8 +81,8 @@ export default function ServiceGuide({ copy }: { copy: Record<string, string> })
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const platform = platformTabs[tab];
-  const serviceCards = buildCards(platform);
-  const effects = buildEffects(platform);
+  const serviceCards = buildCards(platform, copy);
+  const effects = buildEffects(platform, copy);
 
   return (
     <div className="flex flex-col gap-12 pt-2">

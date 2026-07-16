@@ -5,9 +5,11 @@ import type { CompanyInfo } from "@/lib/settings";
 export default function Footer({
   siteName,
   company,
+  copyright,
 }: {
   siteName: string;
   company: CompanyInfo;
+  copyright: string;
 }) {
   const rows: [string, string][] = [
     ["상호", company.name],
@@ -42,7 +44,9 @@ export default function Footer({
           </p>
         )}
         <p className="text-xs text-muted">
-          © {new Date().getFullYear()} {siteName}. All rights reserved.
+          {copyright
+            .replaceAll("{year}", String(new Date().getFullYear()))
+            .replaceAll("{siteName}", siteName)}
         </p>
       </div>
     </footer>

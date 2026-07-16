@@ -292,6 +292,8 @@ describe("관리자 — 잔액조정/문의답변/상품삭제", () => {
 
 describe("충전 — 입력 검증", () => {
   it("입금자명 없으면 거절, 영수증 상세는 빈 값 제거 후 저장", async () => {
+    // 다른 테스트 파일이 남긴 부가세율 설정과 격리 (기본 10% 가정)
+    await prisma.setting.deleteMany({ where: { key: "vat_rate" } });
     const u = await makeUser();
     asUser(u);
     expect((await createChargeRequest({ amount: 10_000, depositorName: "  " })).ok).toBe(false);

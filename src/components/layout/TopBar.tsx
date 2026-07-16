@@ -67,11 +67,13 @@ export default function TopBar({
   siteName,
   notifications,
   unreadCount,
+  logoUrl,
 }: {
   user: CurrentUser | null;
   siteName: string;
   notifications: TopBarNotification[];
   unreadCount: number;
+  logoUrl: string;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,7 +123,7 @@ export default function TopBar({
           {/* 모바일 로고 */}
           <Link href="/" className="shrink-0 lg:hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/로고텍스트일체형.png" alt={siteName} className="h-6 w-auto" />
+            <img src={logoUrl} alt={siteName} className="h-6 w-auto" />
           </Link>
 
           <form
@@ -282,7 +284,7 @@ export default function TopBar({
             <div className="flex items-center justify-between">
               <Link href="/" onClick={() => setDrawerOpen(false)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/로고텍스트일체형.png" alt={siteName} className="h-7 w-auto" />
+                <img src={logoUrl} alt={siteName} className="h-7 w-auto" />
               </Link>
               <button aria-label="닫기" onClick={() => setDrawerOpen(false)}>
                 <X size={24} strokeWidth={1.5} className="text-navy" />

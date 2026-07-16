@@ -27,6 +27,15 @@ export const SETTING_KEYS = [
   "seo_description",
   // 충전 프리셋 금액 (쉼표 구분, 원 단위)
   "charge_presets",
+  // 브랜딩/테마
+  "logo_url", // 로고 이미지 URL (미설정 시 기본 로고)
+  "theme_color_orange", // 포인트(주황) — 버튼·강조
+  "theme_color_navy", // 본문 짙은색
+  "theme_color_blue", // 보조 파랑
+  // 회원가입
+  "signup_channels", // 가입경로 선택지 (쉼표 구분)
+  // 결제
+  "vat_rate", // 부가세율 % (0~20, 기본 10)
 ] as const;
 
 export type CompanyInfo = {
@@ -57,6 +66,70 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
     address: map.company_address ?? "",
     email: map.company_email ?? "",
   };
+}
+
+// ── 테마 색상 ─────────────────────────────────────────
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+/** hex 밝기 조절 (amt -1.0 어둡게 ~ +1.0 밝게) — 주문버튼 그라디언트 파생색용 */
+function shade(hex: string, amt: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) =>
+    Math.max(0, Math.min(255, Math.round(amt >= 0 ? v + (255 - v) * amt : v * (1 + amt))));
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(ch);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
+
+export type ThemeColors = {
+  orange?: string;
+  orangeSoft?: string;
+  orangeDeep?: string;
+  navy?: string;
+  blue?: string;
+  blueSoft?: string;
+};
+
+/** 어드민 설정 테마색 — 유효한 hex만 반환, 파생색(soft/deep) 자동 계산 */
+export async function getThemeColors(): Promise<ThemeColors> {
+  const rows = await prisma.setting.findMany({
+    where: { key: { in: ["theme_color_orange", "theme_color_navy", "theme_color_blue"] } },
+  });
+  const map = Object.fromEntries(rows.map((r) => [r.key, r.value.trim()]));
+  const out: ThemeColors = {};
+  if (HEX_RE.test(map.theme_color_orange ?? "")) {
+    out.orange = map.theme_color_orange;
+    out.orangeSoft = shade(map.theme_color_orange, 0.25);
+    out.orangeDeep = shade(map.theme_color_orange, -0.3);
+  }
+  if (HEX_RE.test(map.theme_color_navy ?? "")) out.navy = map.theme_color_navy;
+  if (HEX_RE.test(map.theme_color_blue ?? "")) {
+    out.blue = map.theme_color_blue;
+    out.blueSoft = shade(map.theme_color_blue, 0.45);
+  }
+  return out;
+}
+
+export async function getLogoUrl(): Promise<string> {
+  const row = await prisma.setting.findUnique({ where: { key: "logo_url" } });
+  const v = row?.value.trim() ?? "";
+  return v || "/brand/로고텍스트일체형.png";
+}
+
+export const DEFAULT_SIGNUP_CHANNELS = ["구글", "네이버", "아이보스", "지인", "인스타"];
+
+export async function getSignupChannels(): Promise<string[]> {
+  const row = await prisma.setting.findUnique({ where: { key: "signup_channels" } });
+  if (!row?.value.trim()) return DEFAULT_SIGNUP_CHANNELS;
+  const parsed = row.value.split(",").map((v) => v.trim()).filter(Boolean);
+  return parsed.length > 0 ? parsed.slice(0, 12) : DEFAULT_SIGNUP_CHANNELS;
+}
+
+/** 부가세율 (0~20%, 기본 10) */
+export async function getVatRate(): Promise<number> {
+  const row = await prisma.setting.findUnique({ where: { key: "vat_rate" } });
+  const n = Number(row?.value.trim());
+  if (!Number.isFinite(n) || n < 0 || n > 20) return 10;
+  return Math.round(n);
 }
 
 export const DEFAULT_CHARGE_PRESETS = [

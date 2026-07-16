@@ -1,6 +1,6 @@
 import ChargePage from "@/components/charge/ChargePage";
 import { getCurrentUser } from "@/lib/auth";
-import { getBankInfo, getChargePresets } from "@/lib/settings";
+import { getBankInfo, getChargePresets, getVatRate } from "@/lib/settings";
 import { getCopy } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
 
@@ -9,6 +9,7 @@ export default async function Charge() {
   const bank = await getBankInfo();
   const copy = await getCopy();
   const presets = await getChargePresets();
+  const vatRate = await getVatRate();
 
   const history = user
     ? await prisma.chargeRequest.findMany({
@@ -33,6 +34,7 @@ export default async function Charge() {
       bank={bank}
       copy={copy}
       presets={presets}
+      vatRate={vatRate}
       history={history.map((h) => ({
         id: h.id,
         amount: h.amount,

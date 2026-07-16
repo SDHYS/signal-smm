@@ -84,7 +84,7 @@ function Shell({
         <div className="flex w-full flex-col gap-10 p-8 sm:p-15 lg:w-1/2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-2">
-              <h1 className="text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-black">
+              <h1 className="whitespace-pre-line text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-black">
                 {title}
               </h1>
               <p className="text-base font-normal leading-6 text-gray">{subtitle}</p>
@@ -141,9 +141,13 @@ function NavButtons({
   );
 }
 
-const channels = ["구글", "네이버", "아이보스", "지인", "인스타"];
-
-export default function SignupWizard() {
+export default function SignupWizard({
+  copy,
+  channels,
+}: {
+  copy: Record<string, string>;
+  channels: string[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -196,17 +200,7 @@ export default function SignupWizard() {
 
   if (step === 1)
     return (
-      <Shell
-        step={1}
-        title={
-          <>
-            서비스 이용약관에
-            <br />
-            동의해주세요
-          </>
-        }
-        subtitle="원활한 서비스 이용을 위해 약관 동의가 필요합니다."
-      >
+      <Shell step={1} title={copy.signup1_title} subtitle={copy.signup1_subtitle}>
         <div className="flex w-full flex-col gap-8">
           <div className="flex w-full flex-col gap-3">
             <button
@@ -260,17 +254,7 @@ export default function SignupWizard() {
 
   if (step === 2)
     return (
-      <Shell
-        step={2}
-        title={
-          <>
-            계정 정보를
-            <br />
-            입력해주세요
-          </>
-        }
-        subtitle="서비스 이용에 필요한 기본 정보입니다."
-      >
+      <Shell step={2} title={copy.signup2_title} subtitle={copy.signup2_subtitle}>
         <div className="flex w-full flex-col gap-8">
           <div className="flex w-full flex-col gap-5">
             <Field label="아이디" placeholder="가입 진행 아이디" value={userId} onChange={setUserId} />
@@ -303,13 +287,13 @@ export default function SignupWizard() {
   // step 4 — 가입 완료
   if (step === 4)
     return (
-      <Shell step={4} title="가입이 완료되었어요" subtitle="이제 SignalSMM의 모든 서비스를 이용할 수 있습니다.">
+      <Shell step={4} title={copy.signup4_title} subtitle={copy.signup4_subtitle}>
         <div className="flex w-full flex-col items-center gap-8 py-6">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-blue text-white">
             <Check size={44} strokeWidth={2.5} />
           </span>
           <p className="text-center text-base text-gray">
-            환영합니다! 잔액을 충전하고 첫 주문을 시작해보세요.
+            {copy.signup4_welcome}
           </p>
           <button
             onClick={() => {
@@ -318,7 +302,7 @@ export default function SignupWizard() {
             }}
             className="flex h-[54px] w-full items-center justify-center rounded bg-black text-base font-medium text-white transition hover:opacity-90"
           >
-            시작하기
+            {copy.signup4_button}
           </button>
         </div>
       </Shell>
@@ -326,17 +310,7 @@ export default function SignupWizard() {
 
   // step 3 — 추가 정보(가입 경로)
   return (
-    <Shell
-      step={3}
-      title={
-        <>
-          추가 정보를
-          <br />
-          알려 주세요
-        </>
-      }
-      subtitle="서비스 이용에 필요한 기본 정보입니다."
-    >
+    <Shell step={3} title={copy.signup3_title} subtitle={copy.signup3_subtitle}>
       <div className="flex w-full flex-col gap-8">
         <div className="flex w-full flex-col gap-2">
           <span className="text-sm font-medium text-[#222222]">가입 경로</span>

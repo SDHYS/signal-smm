@@ -10,6 +10,7 @@ type Field = {
   hint?: string;
   placeholder?: string;
   textarea?: boolean;
+  color?: boolean; // hex 색상 (픽커 병행)
 };
 
 type Section = { title: string; desc: string; fields: Field[] };
@@ -81,6 +82,39 @@ const sections: Section[] = [
     ],
   },
   {
+    title: "브랜딩 · 테마",
+    desc: "로고와 사이트 색상을 바꿉니다. 색상을 비우면 기본 테마가 사용됩니다.",
+    fields: [
+      {
+        key: "logo_url",
+        label: "로고 이미지 URL",
+        placeholder: "/brand/로고텍스트일체형.png 또는 https://…/logo.png",
+        hint: "사이드바·모바일 상단·드로어에 사용됩니다. 가로형 PNG 권장.",
+      },
+      { key: "theme_color_orange", label: "포인트 색상 (버튼·강조)", placeholder: "#EF552B", color: true },
+      { key: "theme_color_navy", label: "본문 짙은 색상", placeholder: "#1F2353", color: true },
+      { key: "theme_color_blue", label: "보조 색상 (파랑 계열)", placeholder: "#2E82FF", color: true },
+    ],
+  },
+  {
+    title: "회원가입 · 결제",
+    desc: "가입 경로 선택지와 부가세율을 설정합니다.",
+    fields: [
+      {
+        key: "signup_channels",
+        label: "가입 경로 선택지 (쉼표 구분)",
+        placeholder: "구글, 네이버, 아이보스, 지인, 인스타",
+        hint: "가입 3단계에서 버튼으로 표시됩니다. 최대 12개.",
+      },
+      {
+        key: "vat_rate",
+        label: "부가세율 (%)",
+        placeholder: "10",
+        hint: "0~20 사이 정수. 0이면 부가세 없이 충전 금액만 입금받습니다.",
+      },
+    ],
+  },
+  {
     title: "검색엔진(SEO) · 충전",
     desc: "브라우저 탭 제목, 검색 결과 설명, 충전 금액 버튼을 설정합니다.",
     fields: [
@@ -139,13 +173,24 @@ export default function SettingsForm({
                   className="w-full resize-y rounded border border-line px-4 py-3 text-sm leading-6 text-navy placeholder:text-gray focus:border-blue focus:outline-none"
                 />
               ) : (
-                <input
-                  id={f.key}
-                  value={values[f.key]}
-                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-                  placeholder={f.placeholder}
-                  className="w-full rounded border border-line px-4 py-3 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    id={f.key}
+                    value={values[f.key]}
+                    onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full rounded border border-line px-4 py-3 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+                  />
+                  {f.color && (
+                    <input
+                      type="color"
+                      aria-label={`${f.label} 색상 선택`}
+                      value={/^#[0-9a-fA-F]{6}$/.test(values[f.key]) ? values[f.key] : (f.placeholder ?? "#000000")}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      className="h-10 w-12 shrink-0 cursor-pointer rounded border border-line"
+                    />
+                  )}
+                </div>
               )}
               {f.hint && <span className="text-xs text-gray">{f.hint}</span>}
             </div>

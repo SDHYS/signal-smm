@@ -66,6 +66,7 @@ export default function ChargePage({
   history,
   copy,
   presets,
+  vatRate,
 }: {
   isLoggedIn: boolean;
   balance: number;
@@ -73,6 +74,7 @@ export default function ChargePage({
   history: History[];
   copy: Record<string, string>;
   presets: number[];
+  vatRate: number;
 }) {
   const router = useRouter();
   const [amount, setAmount] = useState(0);
@@ -90,7 +92,7 @@ export default function ChargePage({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ total: number; depositor: string } | null>(null);
 
-  const vat = Math.round(amount * 0.1);
+  const vat = Math.round((amount * vatRate) / 100);
   const total = amount + vat;
 
   async function handleSubmit() {

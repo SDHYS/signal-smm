@@ -30,9 +30,6 @@ function StepHeader({ step, title }: { step: string; title: string }) {
   );
 }
 
-const categories = ["일반", "팔로워", "연령별 / 성별"];
-const detailTabs = ["서비스 설명", "주문 방법", "주의 사항", "FAQ"];
-
 // 모든 상품을 보여주는 메타 카테고리 타일
 const META_TILES = new Set([
   "국내서비스",
@@ -70,6 +67,10 @@ export default function OrderFlow({
   // 리렌더 전 더블클릭(따닥) 차단 + 서버 멱등성 키
   const inFlightRef = useRef(false);
   const orderKeyRef = useRef<string | null>(null);
+
+  // 필터/탭 라벨은 어드민 문구에서 (동작은 인덱스 기반이라 라벨 변경에 안전)
+  const categories = [copy.category1, copy.category2, copy.category3];
+  const detailTabs = [copy.dtab1, copy.dtab2, copy.dtab3, copy.dtab4];
 
   const selectedPlatform = platformIdx >= 0 ? platforms[platformIdx] : null;
 

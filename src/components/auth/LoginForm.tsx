@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loginAction } from "@/app/actions/auth";
 
-export default function LoginForm() {
+export default function LoginForm({ copy }: { copy: Record<string, string> }) {
   const router = useRouter();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
@@ -37,10 +37,10 @@ export default function LoginForm() {
         <div className="flex w-full flex-col gap-10 p-8 sm:p-15 lg:w-1/2">
           <div className="flex flex-col gap-2">
             <h1 className="text-[22px] font-semibold leading-8 sm:text-[28px] sm:leading-10 lg:text-[32px] lg:leading-[42px] text-black">
-              로그인을 해주세요
+              {copy.login_title}
             </h1>
             <p className="text-base font-normal leading-6 text-gray">
-              인스타그램 좋아요 늘리기로 비즈니스를 성장하세요!
+              {copy.login_subtitle}
             </p>
           </div>
 

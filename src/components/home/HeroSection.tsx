@@ -13,12 +13,15 @@ type Card = {
   imgH: number;
 };
 
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const pick = (v: string, fallback: string) => (HEX_RE.test(v) ? v : fallback);
+
 const buildCards = (copy: Record<string, string>): Card[] => [
   {
     caption: copy.hero_card1_caption,
     title: copy.hero_card1_title,
-    href: "/guide",
-    bg: "#EF552B",
+    href: copy.hero_card1_href || "/guide",
+    bg: pick(copy.hero_card1_color, "#EF552B"),
     captionColor: "rgba(255,255,255,0.70)",
     titleColor: "#ffffff",
     arrowColor: "#ffffff",
@@ -28,8 +31,8 @@ const buildCards = (copy: Record<string, string>): Card[] => [
   {
     caption: copy.hero_card2_caption,
     title: copy.hero_card2_title,
-    href: "/inquiry",
-    bg: "#FFC833",
+    href: copy.hero_card2_href || "/inquiry",
+    bg: pick(copy.hero_card2_color, "#FFC833"),
     captionColor: "rgba(31,35,83,0.70)",
     titleColor: "#1F2353",
     arrowColor: "#ffffff",
@@ -39,8 +42,8 @@ const buildCards = (copy: Record<string, string>): Card[] => [
   {
     caption: copy.hero_card3_caption,
     title: copy.hero_card3_title,
-    href: "/support",
-    bg: "#52CC8F",
+    href: copy.hero_card3_href || "/support",
+    bg: pick(copy.hero_card3_color, "#52CC8F"),
     captionColor: "rgba(31,35,83,0.70)",
     titleColor: "#1F2353",
     arrowColor: "#ffffff",
