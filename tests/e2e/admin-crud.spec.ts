@@ -104,3 +104,38 @@ test("대시보드 쪽지 — 회원에게 발송 성공 메시지", async ({ pa
   await page.getByRole("button", { name: /전송|보내기/ }).click();
   await expect(page.getByText(/해당 아이디의 회원이 없습니다/)).toBeVisible({ timeout: 15_000 });
 });
+
+test("상품 가격 편집 — 도매가 표시 + 판매가 수정이 메인에 반영", async ({ page }) => {
+  const name = `QA가격 ${uniq}`;
+  page.on("dialog", (d) => d.accept());
+
+  // 상품 등록
+  await page.goto("/admin/products");
+  await page.getByRole("button", { name: "유튜브", exact: true }).click();
+  await page.getByPlaceholder(/상품명/).fill(name);
+  await page.getByPlaceholder("단가(원)").fill("100");
+  await page.getByRole("button", { name: "상품 등록" }).click();
+  await expect(page.getByText(`[유튜브] ${name}`)).toBeVisible({ timeout: 15_000 });
+
+  // 미연동 → 도매가 미연동 표기 + 가격 수정
+  const rowEl = page
+    .getByText(`[유튜브] ${name}`)
+    .locator("xpath=ancestor::div[contains(@class,'border-b')][1]");
+  await expect(rowEl.getByText(/도매가 — \(미연동\)/)).toBeVisible();
+  await rowEl.getByLabel(`${name} 판매가`).fill("777");
+  await rowEl.getByRole("button", { name: "가격 저장" }).click();
+  await expect(rowEl.getByText("저장됨")).toBeVisible({ timeout: 15_000 });
+
+  // 메인 반영 확인
+  await page.goto(`/?q=${encodeURIComponent(name)}`);
+  await expect(page.getByText("777원").first()).toBeVisible();
+
+  // 정리
+  await page.goto("/admin/products");
+  await page
+    .getByText(`[유튜브] ${name}`)
+    .locator("xpath=ancestor::div[contains(@class,'border-b')][1]")
+    .getByRole("button", { name: "삭제" })
+    .click();
+  await expect(page.getByText(`[유튜브] ${name}`)).toHaveCount(0, { timeout: 15_000 });
+});

@@ -53,6 +53,31 @@ export async function createProduct(input: {
   return { ok: true };
 }
 
+// 판매가·수량 범위 수정 — 기존 주문은 스냅샷(OrderItem.unitPrice) 저장이라 영향 없음
+export async function updateProductPricing(
+  id: string,
+  input: { unitPrice: number; minQty: number; maxQty: number },
+): Promise<Result> {
+  if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
+
+  const unitPrice = Math.floor(input.unitPrice);
+  const minQty = Math.floor(input.minQty);
+  const maxQty = Math.floor(input.maxQty);
+  if (!Number.isSafeInteger(unitPrice) || unitPrice < 1)
+    return { ok: false, error: "단가는 1원 이상이어야 합니다." };
+  if (!Number.isSafeInteger(minQty) || minQty < 1 || !Number.isSafeInteger(maxQty) || maxQty < minQty)
+    return { ok: false, error: "수량 범위가 올바르지 않습니다." };
+
+  await prisma.product.update({
+    where: { id },
+    data: { unitPrice, minQty, maxQty },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin/products");
+  return { ok: true };
+}
+
 // 도매(공급사) 서비스 매핑 — serviceId가 null이면 연동 해제
 export async function setProviderService(
   productId: string,

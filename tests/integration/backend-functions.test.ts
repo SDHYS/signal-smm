@@ -20,7 +20,7 @@ import { cancelMyCharge, createChargeRequest } from "@/app/actions/charge";
 import { createOrder, setOrderStatus } from "@/app/actions/order";
 import { adjustBalance } from "@/app/actions/members";
 import { answerInquiry } from "@/app/actions/inquiry";
-import { deleteProduct } from "@/app/actions/product";
+import { deleteProduct, updateProductPricing } from "@/app/actions/product";
 
 const PREFIX = `qb_${Date.now().toString(36)}`;
 const userIds: string[] = [];
@@ -287,6 +287,34 @@ describe("관리자 — 잔액조정/문의답변/상품삭제", () => {
     expect((await deleteProduct(unused.id)).ok).toBe(true);
     asUser(u);
     expect((await deleteProduct(used.id)).ok).toBe(false); // 권한
+  });
+});
+
+describe("상품 가격 수정", () => {
+  it("검증(0원/역전 범위/권한) 거절, 정상 수정 반영 — 기존 주문 스냅샷은 불변", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u = await makeUser(10_000);
+    const p = await makeProduct(100);
+    // 기존 주문 생성 (단가 100 스냅샷)
+    asUser(u);
+    const o = await createOrder({ productId: p.id, quantity: 10, targetUrl: "https://x.com/p" });
+    expect(o.ok).toBe(true);
+
+    asAdmin(admin);
+    expect((await updateProductPricing(p.id, { unitPrice: 0, minQty: 1, maxQty: 10 })).ok).toBe(false);
+    expect((await updateProductPricing(p.id, { unitPrice: 100, minQty: 50, maxQty: 10 })).ok).toBe(false);
+    asUser(u);
+    expect((await updateProductPricing(p.id, { unitPrice: 999, minQty: 1, maxQty: 10 })).ok).toBe(false);
+
+    asAdmin(admin);
+    const r = await updateProductPricing(p.id, { unitPrice: 250, minQty: 5, maxQty: 500 });
+    expect(r.ok).toBe(true);
+    const after = await prisma.product.findUnique({ where: { id: p.id } });
+    expect(after?.unitPrice).toBe(250);
+    expect(after?.minQty).toBe(5);
+    // 기존 주문 아이템 단가는 스냅샷 그대로
+    const item = await prisma.orderItem.findFirst({ where: { productId: p.id } });
+    expect(item?.unitPrice).toBe(100);
   });
 });
 

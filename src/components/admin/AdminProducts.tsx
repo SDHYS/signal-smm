@@ -7,6 +7,7 @@ import {
   toggleProduct,
   deleteProduct,
   setProviderService,
+  updateProductPricing,
 } from "@/app/actions/product";
 
 export type ProductItem = {
@@ -58,6 +59,91 @@ function parseMeta(meta: string | null): { name?: string; min?: number; max?: nu
   } catch {
     return {};
   }
+}
+
+// ── 판매가 편집기: 도매 원가 대비 마진 실시간 표시 ────
+function PriceEditor({ p, usdKrw }: { p: ProductItem; usdKrw: number }) {
+  const router = useRouter();
+  const [price, setPrice] = useState(String(p.unitPrice));
+  const [minQ, setMinQ] = useState(String(p.minQty));
+  const [maxQ, setMaxQ] = useState(String(p.maxQty));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  // 도매 원가/개 (매핑된 상품만) + 입력값 기준 실시간 마진
+  const costPerUnit = p.providerRate !== null ? (p.providerRate * usdKrw) / 1000 : null;
+  const priceNum = Number(price) || 0;
+  const margin = costPerUnit && costPerUnit > 0 && priceNum > 0 ? priceNum / costPerUnit : null;
+  const changed =
+    price !== String(p.unitPrice) || minQ !== String(p.minQty) || maxQ !== String(p.maxQty);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    const res = await updateProductPricing(p.id, {
+      unitPrice: Number(price) || 0,
+      minQty: Number(minQ) || 0,
+      maxQty: Number(maxQ) || 0,
+    });
+    setBusy(false);
+    if (res.ok) {
+      setMsg("저장됨");
+      setTimeout(() => setMsg(null), 1500);
+      router.refresh();
+    } else setMsg(res.error ?? "저장 실패");
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+      <label className="flex items-center gap-1.5">
+        <span className="text-gray">판매가</span>
+        <input
+          value={price}
+          onChange={(e) => setPrice(e.target.value.replace(/[^0-9]/g, ""))}
+          aria-label={`${p.name} 판매가`}
+          className="w-24 rounded border border-line px-2.5 py-1.5 text-right text-sm text-navy focus:border-blue focus:outline-none"
+        />
+        <span className="text-gray">원</span>
+      </label>
+      <label className="flex items-center gap-1.5">
+        <span className="text-gray">수량</span>
+        <input
+          value={minQ}
+          onChange={(e) => setMinQ(e.target.value.replace(/[^0-9]/g, ""))}
+          aria-label={`${p.name} 최소수량`}
+          className="w-20 rounded border border-line px-2.5 py-1.5 text-right text-sm text-navy focus:border-blue focus:outline-none"
+        />
+        <span className="text-gray">~</span>
+        <input
+          value={maxQ}
+          onChange={(e) => setMaxQ(e.target.value.replace(/[^0-9]/g, ""))}
+          aria-label={`${p.name} 최대수량`}
+          className="w-24 rounded border border-line px-2.5 py-1.5 text-right text-sm text-navy focus:border-blue focus:outline-none"
+        />
+      </label>
+      {/* 도매 원가 + 실시간 마진 */}
+      {costPerUnit !== null ? (
+        <span className="text-gray">
+          도매가 <span className="font-medium text-navy">{costPerUnit.toFixed(2)}원/개</span>
+          {margin !== null && (
+            <span className={margin < 1.5 ? "font-medium text-[#ED1C24]" : "text-[#04B014]"}>
+              {" "}→ 마진 {margin.toFixed(1)}배
+            </span>
+          )}
+        </span>
+      ) : (
+        <span className="text-muted">도매가 — (미연동)</span>
+      )}
+      <button
+        onClick={save}
+        disabled={busy || !changed}
+        className="rounded bg-navy px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+      >
+        {busy ? "저장 중..." : "가격 저장"}
+      </button>
+      {msg && <span className="text-xs font-medium text-blue">{msg}</span>}
+    </div>
+  );
 }
 
 // ── 도매 연동 패널 (상품 행 하단) ─────────────────────
@@ -432,10 +518,7 @@ export default function AdminProducts({
                     )}
                     [{p.category}] {p.name}
                   </span>
-                  <span className="text-sm text-gray">
-                    단가 {won(p.unitPrice)} · 수량 {p.minQty.toLocaleString()}~
-                    {p.maxQty.toLocaleString()} · 누적 주문 {p.orderCount}건
-                  </span>
+                  <span className="text-sm text-gray">누적 주문 {p.orderCount}건</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button
@@ -456,6 +539,7 @@ export default function AdminProducts({
                   </button>
                 </div>
               </div>
+              <PriceEditor p={p} usdKrw={usdKrw} />
               <ProviderPanel
                 p={p}
                 services={services}
