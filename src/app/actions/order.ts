@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
-import { dispatchOrder } from "@/lib/dispatch";
+import { dispatchOrder, forceRedispatchOrder } from "@/lib/dispatch";
 import { cancelOrders, smmConfigured } from "@/lib/smm";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string };
@@ -90,6 +90,8 @@ export async function createOrder(input: {
               quantity: qty,
               subtotal: total,
               targetUrl,
+              // 주문 시점 도매 서비스 ID 스냅샷 — 이후 상품이 재매핑돼도 이 서비스로 발주
+              providerServiceIdSnapshot: product.providerServiceId,
             },
           },
         },
@@ -132,11 +134,11 @@ export async function redispatchOrder(id: string): Promise<OrderResult> {
     return { ok: false, error: "권한이 없습니다." };
 
   // 주문 단위 rate limit — 따닥 클릭 시 이중 발주 시도 자체를 억제
-  // (dispatch 내부의 sentAt 선점 락이 최종 방어선, 여기는 1차 방어선)
   if (!(await rateLimit("redispatch", { max: 1, windowMs: 10_000, key: id })))
     return { ok: false, error: "잠시 후 다시 시도해주세요." };
 
-  const res = await dispatchOrder(id);
+  // 관리자 명시적 재발주는 실패건(providerError)만 재과금 — 정상 발주중 건은 스킵
+  const res = await forceRedispatchOrder(id);
   revalidatePath("/admin/orders");
   if (!res.ok) return { ok: false, error: res.error };
   if (res.skipped)
@@ -192,6 +194,19 @@ export async function setOrderStatus(
   const admin = await getCurrentUser();
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
+
+  // 도매 발주된 주문의 수동 '완료'는 금지 — 도매가 Partial로 끝나면 자동 잔여환불이
+  // 무효화되어 고객이 손해본다. 도매 연동 주문은 상태 동기화가 완료/환불을 결정한다.
+  if (status === "COMPLETED") {
+    const dispatched = await prisma.orderItem.count({
+      where: { orderId: id, providerOrderId: { not: null } },
+    });
+    if (dispatched > 0)
+      return {
+        ok: false,
+        error: "도매 발주된 주문은 '도매 상태 동기화'로만 완료됩니다. 수동 완료 불가.",
+      };
+  }
 
   const updated = await prisma.order.updateMany({
     where: { id, status: { in: ALLOWED_FROM[status] } },
@@ -270,17 +285,30 @@ export async function refundOrder(id: string): Promise<OrderResult> {
     return { ok: false, error: "환불 처리 중 오류가 발생했습니다." };
   }
 
-  // 도매에 이미 발주된 건이면 취소 요청 (best-effort — 미지원 서비스는 실패해도 무방)
+  // 도매에 이미 발주된 건이면 취소 요청. 발주된 주문을 환불하면 도매 작업은 계속돼
+  // 도매비만 나갈 수 있으므로, 취소 요청 성공/실패를 관리자 메모에 남겨 손실을 인지시킨다.
   if (smmConfigured()) {
-    try {
-      const items = await prisma.orderItem.findMany({
-        where: { orderId: id, providerOrderId: { not: null } },
-        select: { providerOrderId: true },
-      });
-      if (items.length > 0)
-        await cancelOrders(items.map((i) => i.providerOrderId!));
-    } catch (e) {
-      console.error("refundOrder: provider cancel failed", { orderId: id }, e);
+    const dispatched = await prisma.orderItem.findMany({
+      where: { orderId: id, providerOrderId: { not: null } },
+      select: { providerOrderId: true },
+    });
+    if (dispatched.length > 0) {
+      let cancelNote: string;
+      try {
+        await cancelOrders(dispatched.map((i) => i.providerOrderId!));
+        cancelNote = `도매 취소 요청됨(#${dispatched.map((i) => i.providerOrderId).join(",")}) — 실제 취소 여부는 도매 상태 동기화로 확인 필요`;
+      } catch (e) {
+        console.error("refundOrder: provider cancel failed", { orderId: id }, e);
+        cancelNote = `⚠ 도매 취소 요청 실패 — 도매 작업이 계속될 수 있음(도매비 손실 주의). 도매 패널에서 직접 취소 확인 필요`;
+      }
+      await prisma.order
+        .update({
+          where: { id },
+          data: {
+            adminMemo: `${order.adminMemo ? order.adminMemo + " / " : ""}${cancelNote}`,
+          },
+        })
+        .catch(() => {});
     }
   }
 

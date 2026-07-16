@@ -16,8 +16,13 @@ export async function toggleFavorite(
 
   let active = false;
   if (deleted.count === 0) {
-    await prisma.favorite.create({ data: { userId: user.id, productId } });
-    active = true;
+    try {
+      await prisma.favorite.create({ data: { userId: user.id, productId } });
+      active = true;
+    } catch {
+      // 상품이 삭제됐거나(FK) 동시 요청으로 이미 존재(unique) — 조용히 무시
+      return { ok: false, error: "즐겨찾기할 수 없는 상품입니다." };
+    }
   }
 
   revalidatePath("/");

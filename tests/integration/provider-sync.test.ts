@@ -17,7 +17,7 @@ vi.mock("@/lib/auth", () => ({
   getCurrentUser: async () => authState.user,
 }));
 
-import { dispatchOrderItem } from "@/lib/dispatch";
+import { dispatchOrderItem, forceRedispatchItem } from "@/lib/dispatch";
 import { syncProviderOrders } from "@/lib/sync-orders";
 import { refundOrder } from "@/app/actions/order";
 
@@ -172,7 +172,7 @@ describe("발주 (dispatchOrderItem)", () => {
     await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
   });
 
-  it("도매 에러(잔액부족 등) → providerError 기록, 주문은 PAID 유지", async () => {
+  it("도매 에러 → providerError 기록, sentAt 유지(과금 시도 기록), 자동 재발주는 재과금 안 함", async () => {
     const u = await makeUser();
     const p = await makeProduct(4189);
     const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10 });
@@ -185,9 +185,30 @@ describe("발주 (dispatchOrderItem)", () => {
     const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
     expect(item?.providerOrderId).toBeNull();
     expect(item?.providerError).toContain("Not enough funds");
-    expect(item?.sentAt).toBeNull(); // 실패 시 선점 해제 → 재발주 가능
-    const order = await prisma.order.findUnique({ where: { id: o.id } });
-    expect(order?.status).toBe("PAID"); // 주문은 살아있음 (재발주 대상)
+    expect(item?.sentAt).not.toBeNull(); // 과금 시도 기록 — 자동 재발주 재과금 방지
+
+    // 자동 경로(dispatchOrderItem) 재호출 → sentAt 있어 skip, 도매 재호출 없음
+    const before = fetchCalls.length;
+    const r2 = await dispatchOrderItem(o.items[0].id);
+    expect(r2.skipped).toBe(true);
+    expect(fetchCalls.length).toBe(before);
+    await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
+  });
+
+  it("관리자 명시적 재발주(forceRedispatch) → 실패건만 재시도 성공", async () => {
+    const u = await makeUser();
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10 });
+    // 1차: 실패
+    stubSmm(() => ({ error: "Not enough funds" }));
+    await dispatchOrderItem(o.items[0].id);
+    // 2차: 관리자 재발주 → 성공
+    stubSmm(() => ({ order: 90909 }));
+    const r = await forceRedispatchItem(o.items[0].id);
+    expect(r.ok).toBe(true);
+    const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
+    expect(item?.providerOrderId).toBe("90909");
+    expect(item?.providerError).toBeNull();
     await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
   });
 
@@ -294,6 +315,46 @@ describe("상태 동기화 (syncProviderOrders)", () => {
     // 정리
     await prisma.orderItem.deleteMany({ where: { orderId: o.id } });
     await prisma.order.delete({ where: { id: o.id } });
+  });
+
+  it("Completed인데 remains>0 → 부분완료로 처리해 잔여분 환불", async () => {
+    const u = await makeUser(0);
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 100, providerOrderId: "77100" });
+    stubSmm(() => ({ status: "Completed", remains: "40" })); // 완료지만 40개 미처리
+
+    await syncProviderOrders();
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(4_000); // 40 × 100원 환불
+    const order = await prisma.order.findUnique({ where: { id: o.id } });
+    expect(order?.status).toBe("COMPLETED");
+  });
+
+  it("Error 상태 → 전액 환불 (미매핑 PROCESSING 방치 방지)", async () => {
+    const u = await makeUser(0);
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 15, providerOrderId: "77101" });
+    stubSmm(() => ({ status: "Error" }));
+
+    await syncProviderOrders();
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(1_500); // 15 × 100원 전액 환불
+    const order = await prisma.order.findUnique({ where: { id: o.id } });
+    expect(order?.status).toBe("CANCELLED");
+  });
+
+  it("미지 상태 → 상태 전이 없이 로그만 (조용한 PROCESSING 방지)", async () => {
+    const u = await makeUser(0);
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10, providerOrderId: "77102" });
+    stubSmm(() => ({ status: "SomethingWeird" }));
+
+    await syncProviderOrders();
+    const order = await prisma.order.findUnique({ where: { id: o.id } });
+    expect(order?.status).toBe("PAID"); // 임의 전이 안 함
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(0); // 환불도 안 함
+    await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
   });
 
   it("Partial remains가 주문수량 초과 → 주문수량으로 클램프(과다환불 차단)", async () => {

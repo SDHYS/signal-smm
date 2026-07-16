@@ -248,6 +248,32 @@ describe("주문 — 상품 상태/권한/상태전이", () => {
     asUser(u);
     expect((await setOrderStatus(o2.id, "PROCESSING")).error).toContain("권한");
   });
+
+  it("도매 발주된 주문은 수동 '완료' 불가 (자동 잔여환불 무효화 방지)", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u = await makeUser();
+    const p = await makeProduct();
+    const o = await prisma.order.create({
+      data: {
+        orderNo: `${PREFIX}_dispatched_${Math.random().toString(36).slice(2, 8)}`,
+        userId: u.id,
+        status: "PROCESSING",
+        totalAmount: 100,
+        items: {
+          create: {
+            productId: p.id, productName: "t", unitPrice: 100, quantity: 1, subtotal: 100,
+            providerOrderId: "DISPATCHED1", providerStatus: "In progress", sentAt: new Date(),
+          },
+        },
+      },
+    });
+    asAdmin(admin);
+    const r = await setOrderStatus(o.id, "COMPLETED");
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain("도매");
+    const after = await prisma.order.findUnique({ where: { id: o.id } });
+    expect(after?.status).toBe("PROCESSING"); // 변경 안 됨
+  });
 });
 
 describe("관리자 — 잔액조정/문의답변/상품삭제", () => {

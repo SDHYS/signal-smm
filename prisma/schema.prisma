@@ -135,6 +135,7 @@ model OrderItem {
   subtotal    Int // unitPrice * quantity
   targetUrl   String? // 작업 대상 링크(게시물/계정 URL)
   // 도매(공급사) 발주 상태
+  providerServiceIdSnapshot Int? // 주문 시점 매핑된 도매 서비스 ID (이후 재매핑돼도 이 값으로 발주)
   providerOrderId String? // 공급사 주문번호
   providerStatus  String? // Pending | In progress | Completed | Partial | Canceled ...
   providerRemains Int? // 미완료 잔여 수량 (Partial 시 환불 계산용)

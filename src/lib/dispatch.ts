@@ -12,12 +12,17 @@ export type DispatchResult = {
  * 주문 아이템 1건을 도매에 발주한다.
  * - 상품이 미연동이거나 SMM_API_KEY가 없으면 조용히 건너뛴다(수동 모드).
  * - 이미 발주된 아이템은 중복 발주하지 않는다(멱등).
- * - 실패해도 throw하지 않는다 — 주문 자체는 이미 결제 완료이므로,
- *   실패 사유를 providerError에 남겨 관리자 재발주 대상으로 표시한다.
+ * - 실패해도 throw하지 않는다.
+ *
+ * ★ 이중 과금 방지 핵심 원칙: sentAt(발주 시도 시각)은 addOrder 호출 "전"에 원자 선점하고,
+ *   이후 어떤 경우에도 자동으로 지우지 않는다(=외부 과금 시도의 영구 기록). 따라서
+ *   addOrder가 성공했든/DB쓰기가 실패했든/프로세스가 죽었든, sentAt이 찍힌 아이템은
+ *   재발주 루프(자동)에서 절대 다시 addOrder를 호출하지 않는다 → 도매 이중 과금 불가능.
+ *   실패 시 providerError만 기록하며, 이 "sentAt 있음+providerOrderId 없음+error 있음"
+ *   상태는 관리자가 명시적으로 확인 후 재발주(forceRedispatchItem)하게 한다.
  */
 export async function dispatchOrderItem(itemId: string): Promise<DispatchResult> {
   // 로컬 개발/테스트에서 실도매 발주가 나가지 않도록 하는 안전 스위치
-  // (.env에 SMM_DISPATCH_DISABLED=1 — 운영 Vercel에는 미설정)
   if (process.env.SMM_DISPATCH_DISABLED === "1") return { ok: true, skipped: true };
   if (!smmConfigured()) return { ok: true, skipped: true };
 
@@ -30,31 +35,35 @@ export async function dispatchOrderItem(itemId: string): Promise<DispatchResult>
   });
   if (!item) return { ok: false, error: "주문 아이템을 찾을 수 없습니다." };
   if (item.providerOrderId) return { ok: true }; // 이미 발주됨 (멱등)
-  if (!item.product.providerServiceId) return { ok: true, skipped: true };
+  // 주문 시점 스냅샷 우선, 없으면(과거 주문) 현재 상품 매핑 폴백
+  const serviceId = item.providerServiceIdSnapshot ?? item.product.providerServiceId;
+  if (!serviceId) return { ok: true, skipped: true };
   if (!item.targetUrl)
     return { ok: false, error: "주문 링크가 없어 발주할 수 없습니다." };
-  // 환불/취소·완료된 주문은 절대 발주하지 않는다 (환불 후 재발주로 도매비만 나가는 구멍 차단)
   if (item.order.status !== "PAID" && item.order.status !== "PROCESSING")
     return { ok: false, error: "발주 가능한 상태의 주문이 아닙니다." };
 
-  // 동시 발주 방지: addOrder(외부 과금) 전에 DB에서 "발주 중" 선점.
-  // sentAt 갱신을 원자 조건(providerOrderId: null, sentAt: null)으로 잠가,
-  // 두 번째 동시 호출은 count===0으로 즉시 빠져나가 addOrder를 호출하지 않는다.
+  // addOrder(외부 과금) 전에 sentAt을 원자 선점. 조건(providerOrderId·sentAt 모두 null)이라
+  // 이미 시도된 아이템(자동 재발주 대상 포함)은 count===0으로 빠져 재과금하지 않는다.
   const claim = await prisma.orderItem.updateMany({
     where: { id: itemId, providerOrderId: null, sentAt: null },
     data: { sentAt: new Date() },
   });
-  if (claim.count === 0) {
-    // 다른 호출이 이미 선점(발주 진행 중) — 중복 발주 방지
-    return { ok: true, skipped: true };
-  }
+  if (claim.count === 0)
+    return { ok: true, skipped: true }; // 이미 발주 시도됨 — 자동 재과금 금지
 
+  return await sendToProvider(item.id, serviceId, item.targetUrl, item.quantity);
+}
+
+/** 실제 도매 호출 + 결과 기록. sentAt은 이미 선점된 상태에서만 호출된다. */
+async function sendToProvider(
+  itemId: string,
+  service: number,
+  link: string,
+  quantity: number,
+): Promise<DispatchResult> {
   try {
-    const providerOrderId = await addOrder({
-      service: item.product.providerServiceId,
-      link: item.targetUrl,
-      quantity: item.quantity,
-    });
+    const providerOrderId = await addOrder({ service, link, quantity });
     await prisma.orderItem.update({
       where: { id: itemId },
       data: { providerOrderId, providerStatus: "Pending", providerError: null },
@@ -63,16 +72,52 @@ export async function dispatchOrderItem(itemId: string): Promise<DispatchResult>
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("dispatchOrderItem failed", { itemId }, e);
-    // 실패 시 선점 해제(sentAt=null)해 관리자 재발주가 가능하도록 되돌린다
+    // sentAt은 유지(과금 시도 기록) — providerError만 기록해 관리자 재발주 대상으로 표시
     await prisma.orderItem
-      .update({ where: { id: itemId }, data: { providerError: msg, sentAt: null } })
+      .update({ where: { id: itemId }, data: { providerError: msg } })
       .catch(() => {});
     return { ok: false, error: msg };
   }
 }
 
-/** 주문의 모든 아이템 발주 (현재 구조는 주문당 1아이템) */
-export async function dispatchOrder(orderId: string): Promise<DispatchResult> {
+/**
+ * 관리자 명시적 재발주 — "발주 시도했으나 주문번호 없음(providerError 존재)" 상태에서만 허용.
+ * 자동 경로(dispatchOrderItem)는 sentAt이 찍힌 건 다시 과금하지 않으므로, 실패건 재시도는
+ * 관리자가 도매 대시보드에서 "실제로 발주 안 됐음"을 확인한 뒤 이 함수로만 수행한다.
+ */
+export async function forceRedispatchItem(itemId: string): Promise<DispatchResult> {
+  if (process.env.SMM_DISPATCH_DISABLED === "1") return { ok: true, skipped: true };
+  if (!smmConfigured()) return { ok: true, skipped: true };
+
+  const item = await prisma.orderItem.findUnique({
+    where: { id: itemId },
+    include: {
+      product: { select: { providerServiceId: true } },
+      order: { select: { status: true } },
+    },
+  });
+  if (!item) return { ok: false, error: "주문 아이템을 찾을 수 없습니다." };
+  if (item.providerOrderId) return { ok: true }; // 이미 발주됨
+  const serviceId = item.providerServiceIdSnapshot ?? item.product.providerServiceId;
+  if (!serviceId) return { ok: true, skipped: true };
+  if (!item.targetUrl) return { ok: false, error: "주문 링크가 없습니다." };
+  if (item.order.status !== "PAID" && item.order.status !== "PROCESSING")
+    return { ok: false, error: "발주 가능한 상태의 주문이 아닙니다." };
+
+  // sentAt 재선점(providerError가 있는 실패건만) — 이미 정상 발주중인 건은 건드리지 않음
+  const claim = await prisma.orderItem.updateMany({
+    where: { id: itemId, providerOrderId: null },
+    data: { sentAt: new Date(), providerError: null },
+  });
+  if (claim.count === 0) return { ok: true, skipped: true };
+
+  return await sendToProvider(item.id, serviceId, item.targetUrl, item.quantity);
+}
+
+async function forEachItem(
+  orderId: string,
+  fn: (id: string) => Promise<DispatchResult>,
+): Promise<DispatchResult> {
   const items = await prisma.orderItem.findMany({
     where: { orderId },
     select: { id: true },
@@ -82,11 +127,19 @@ export async function dispatchOrder(orderId: string): Promise<DispatchResult> {
   let lastError: string | undefined;
   let anySkipped = false;
   for (const it of items) {
-    const r = await dispatchOrderItem(it.id);
+    const r = await fn(it.id);
     if (!r.ok) lastError = r.error;
     if (r.skipped) anySkipped = true;
   }
-  return lastError
-    ? { ok: false, error: lastError }
-    : { ok: true, skipped: anySkipped };
+  return lastError ? { ok: false, error: lastError } : { ok: true, skipped: anySkipped };
+}
+
+/** 주문 자동 발주 (주문 생성 직후) — 미시도 아이템만 과금 */
+export function dispatchOrder(orderId: string): Promise<DispatchResult> {
+  return forEachItem(orderId, dispatchOrderItem);
+}
+
+/** 관리자 명시적 재발주 — 실패건(providerError)만 재시도 */
+export function forceRedispatchOrder(orderId: string): Promise<DispatchResult> {
+  return forEachItem(orderId, forceRedispatchItem);
 }

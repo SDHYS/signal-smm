@@ -127,7 +127,8 @@ function Row({ o }: { o: AdminOrder }) {
               진행중으로
             </button>
           )}
-          {o.status === "PROCESSING" && (
+          {/* 도매 발주된 주문은 동기화가 완료를 결정 — 수동 완료 버튼 미노출 */}
+          {o.status === "PROCESSING" && !o.providerOrderId && (
             <button
               onClick={() => act(() => setOrderStatus(o.id, "COMPLETED"))}
               disabled={busy}

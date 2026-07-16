@@ -59,6 +59,8 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
   const statuses = await getOrdersStatus(items.map((i) => i.providerOrderId!));
 
   for (const item of items) {
+    // 한 아이템의 어떤 예외도 이 루프를 중단시키지 않도록 전체를 격리 (poison-pill 방지)
+    try {
     const st = statuses[item.providerOrderId!];
     if (!st) continue;
 
@@ -87,7 +89,13 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
       continue;
     }
 
-    const status = st.status;
+    // 상태 필드가 없는 예상외 응답 방어 (undefined.toLowerCase 크래시 → 전체 run 중단 방지)
+    const status = typeof st.status === "string" ? st.status : "";
+    if (!status) {
+      summary.errors++;
+      console.error("syncProviderOrders: 도매 응답에 상태 없음", { itemId: item.id });
+      continue;
+    }
     // 잔여 수량은 0~주문수량으로 클램프 — 공급사 오응답이 과다 환불로 이어지는 것 차단
     const remains = Math.min(item.quantity, Math.max(0, Number(st.remains) || 0));
     const s = status.toLowerCase();
@@ -98,8 +106,10 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
       data: { providerStatus: status, providerRemains: remains, syncedAt: new Date() },
     });
 
-    try {
-      if (s === "completed") {
+    {
+      // 완료로 왔지만 잔여수량이 남아 있으면 부분완료로 처리 (도매가 completed+remains를 줄 수 있음)
+      const isPartial = s === "partial" || (s === "completed" && remains > 0);
+      if (s === "completed" && remains === 0) {
         const upd = await prisma.order.updateMany({
           where: { id: item.order.id, status: { in: ["PAID", "PROCESSING"] } },
           data: { status: "COMPLETED", completedAt: new Date() },
@@ -112,7 +122,7 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
             link: "/orders",
           });
         }
-      } else if (s === "partial") {
+      } else if (isPartial) {
         // 부분완료: 상태 전이 1회에만 잔여분 환불 (중복 실행 안전)
         const refund = remains * item.unitPrice;
         // 상태 전환을 실제로 이 실행이 선점했을 때만(count===1) 환불·알림 (동시 실행 시 허위 알림 방지)
@@ -142,8 +152,15 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
               link: "/orders",
             });
         }
-      } else if (s === "canceled" || s === "cancelled" || s === "refunded" || s === "fail") {
-        // 도매 측 취소/실패: 전액 환불
+      } else if (
+        s === "canceled" ||
+        s === "cancelled" ||
+        s === "refunded" ||
+        s === "fail" ||
+        s === "failed" ||
+        s === "error"
+      ) {
+        // 도매 측 취소/실패/에러: 전액 환불
         const claimed = await prisma.$transaction(async (tx) => {
           const upd = await tx.order.updateMany({
             where: { id: item.order.id, status: { in: ["PAID", "PROCESSING"] } },
@@ -173,17 +190,34 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
             link: "/orders",
           });
         }
-      } else {
-        // Pending / In progress / Processing → 진행중
+      } else if (
+        s === "pending" ||
+        s === "in progress" ||
+        s === "inprogress" ||
+        s === "in_progress" ||
+        s === "processing"
+      ) {
+        // 진행 중 → PROCESSING
         const upd = await prisma.order.updateMany({
           where: { id: item.order.id, status: "PAID" },
           data: { status: "PROCESSING" },
         });
         if (upd.count === 1) summary.processing++;
+      } else {
+        // 매핑되지 않은 미지 상태 — 임의로 상태 전이하지 않고 로그만 남긴다
+        // (조용히 PROCESSING으로 흘려보내 환불 누락되는 것 방지)
+        summary.errors++;
+        console.error("syncProviderOrders: 미매핑 도매 상태", {
+          itemId: item.id,
+          orderNo: item.order.orderNo,
+          status,
+        });
       }
+    }
     } catch (e) {
+      // 이 아이템 처리 실패 — 다음 아이템으로 계속 (전체 run 중단 방지)
       summary.errors++;
-      console.error("syncProviderOrders: item sync failed", { itemId: item.id, status }, e);
+      console.error("syncProviderOrders: item sync failed", { itemId: item.id }, e);
     }
   }
 
