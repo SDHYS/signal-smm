@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -80,6 +80,52 @@ export default function TopBar({
   const [bellOpen, setBellOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const drawerReturnFocus = useRef<HTMLElement | null>(null);
+
+  // 드로어 열림 동안: Escape 닫기 + 포커스 트랩(Tab 순환) + 첫 요소 포커스/복원 + 스크롤 잠금
+  useEffect(() => {
+    if (!drawerOpen) return;
+    drawerReturnFocus.current = document.activeElement as HTMLElement | null;
+    const panel = drawerRef.current;
+    const focusables = () =>
+      panel
+        ? Array.from(
+            panel.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => el.offsetParent !== null)
+        : [];
+    focusables()[0]?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+      drawerReturnFocus.current?.focus();
+    };
+  }, [drawerOpen]);
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -288,7 +334,13 @@ export default function TopBar({
             className="absolute inset-0 bg-black/40"
             onClick={() => setDrawerOpen(false)}
           />
-          <div className="absolute left-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col gap-8 overflow-y-auto bg-white px-6 py-6">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="사이트 메뉴"
+            className="absolute left-0 top-0 flex h-full w-[300px] max-w-[85vw] flex-col gap-8 overflow-y-auto bg-white px-6 py-6"
+          >
             <div className="flex items-center justify-between">
               <Link href="/" onClick={() => setDrawerOpen(false)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}

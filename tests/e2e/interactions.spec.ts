@@ -91,6 +91,23 @@ test("모바일 드로어 — 잔액충전 링크 이동", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "잔액충전" })).toBeVisible();
 });
 
+test("모바일 드로어 — Escape 키로 닫힘(포커스 트랩/모달 접근성)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "메뉴 열기" }).click();
+  const drawer = page.getByRole("dialog", { name: "사이트 메뉴" });
+  await expect(drawer).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
+});
+
+test("본문 바로가기(skip-link) — Tab 첫 진입 시 노출", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "본문 바로가기" });
+  await expect(skip).toBeFocused();
+});
+
 test("한글 줄바꿈 — 단어 중간에서 꺾이지 않음 (keep-all)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/support");

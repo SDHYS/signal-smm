@@ -59,6 +59,13 @@ export default async function SiteLayout({
           dangerouslySetInnerHTML={{ __html: `:root{${themeVars}}` }}
         />
       )}
+      {/* 키보드/스크린리더용 본문 바로가기 — Tab 첫 진입 시 노출 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-navy focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        본문 바로가기
+      </a>
       <Sidebar user={user} siteName={siteName} logoUrl={logoUrl} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
@@ -68,7 +75,7 @@ export default async function SiteLayout({
           unreadCount={unreadCount}
           logoUrl={logoUrl}
         />
-        <main className="mx-auto w-full max-w-[1380px] flex-1 px-4 pb-24 sm:px-8">
+        <main id="main-content" className="mx-auto w-full max-w-[1380px] flex-1 px-4 pb-24 sm:px-8">
           {children}
         </main>
         <Footer siteName={siteName} company={company} copyright={copy.footer_copyright} />
