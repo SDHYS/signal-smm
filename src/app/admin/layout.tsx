@@ -18,7 +18,7 @@ export default async function AdminLayout({
         <div className="mx-auto flex max-w-[1100px] items-center justify-between px-8 py-5">
           <div className="flex items-center gap-3">
             <span className="rounded bg-navy px-3 py-1 text-sm font-semibold text-white">
-              ADMIN
+              SIGNAL SMM ADMIN
             </span>
           </div>
           <div className="flex items-center gap-3 text-sm">

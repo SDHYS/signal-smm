@@ -35,7 +35,7 @@ function Card({ s }: { s: Stat }) {
 
 export default function DashboardStats({ stats }: { stats: Stat[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 auto-rows-fr md:grid-cols-4">
       {stats.map((s) => (
         <Card key={s.label} s={s} />
       ))}
