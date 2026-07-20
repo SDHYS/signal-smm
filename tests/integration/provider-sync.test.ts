@@ -19,7 +19,7 @@ vi.mock("@/lib/auth", () => ({
 
 import { dispatchOrderItem, forceRedispatchItem } from "@/lib/dispatch";
 import { syncProviderOrders } from "@/lib/sync-orders";
-import { refundOrder } from "@/app/actions/order";
+import { refundOrder, createOrder } from "@/app/actions/order";
 
 const PREFIX = `qp_${Date.now().toString(36)}`;
 const userIds: string[] = [];
@@ -439,5 +439,36 @@ describe("관리자 환불 → 도매 취소 연동", () => {
 
     const after = await prisma.user.findUnique({ where: { id: u.id } });
     expect(after?.balance).toBe(500);
+  });
+});
+
+// 실발주 활성(SMM_API_KEY 있음 + DISPATCH_DISABLED 해제) 상태에서의 미연동 상품 주문 차단
+describe("주문 — 도매 미연동 상품 차단(1:1 문의 유도)", () => {
+  it("미연동 상품은 주문 불가(잔액 차감 없음), 연동 상품은 정상 주문", async () => {
+    const u = await makeUser(1_000_000);
+    const unmapped = await makeProduct(null); // 도매 미연동
+    const mapped = await makeProduct(4189); // 도매 연동
+    authState.user = { id: u.id, role: "USER" };
+    stubSmm((action) => (action === "add" ? { order: 55501 } : {}));
+
+    // 미연동 → 차단
+    const blocked = await createOrder({
+      productId: unmapped.id,
+      quantity: 10,
+      targetUrl: "https://example.com/x",
+    });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.error).toContain("1:1 문의");
+
+    // 연동 → 성공 + 잔액 차감
+    const ok = await createOrder({
+      productId: mapped.id,
+      quantity: 10,
+      targetUrl: "https://example.com/y",
+    });
+    expect(ok.ok).toBe(true);
+
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(1_000_000 - 10 * 100); // 연동 상품 1건만 차감
   });
 });

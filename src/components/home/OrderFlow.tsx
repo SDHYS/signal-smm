@@ -19,6 +19,7 @@ export type OrderProduct = {
   unitPrice: number;
   minQty: number;
   maxQty: number;
+  providerServiceId: number | null; // null = 도매 미연동 → 직접 주문 불가(1:1 문의 유도)
 };
 
 function StepHeader({ step, title }: { step: string; title: string }) {
@@ -46,6 +47,7 @@ export default function OrderFlow({
   query,
   favoriteIds,
   copy,
+  enforceMapping = false,
 }: {
   isLoggedIn: boolean;
   balance: number;
@@ -53,6 +55,7 @@ export default function OrderFlow({
   query?: string;
   favoriteIds: string[];
   copy: Record<string, string>;
+  enforceMapping?: boolean; // 실발주 활성 시 도매 미연동 상품을 1:1 문의로 유도
 }) {
   const router = useRouter();
   const [platformIdx, setPlatformIdx] = useState(-1);
@@ -137,10 +140,17 @@ export default function OrderFlow({
     !META_TILES.has(selectedPlatform.name) &&
     !products.some((p) => p.category === selectedPlatform.name);
 
+  // 선택 상품이 도매 미연동(자동 발주 불가) → 직접 주문 대신 1:1 문의로 안내.
+  // 서버(createOrder)도 동일하게 차단하므로 UI는 안내용.
+  const productUnavailable =
+    enforceMapping && !!product && product.providerServiceId == null;
+
   async function handleOrder() {
     setError(null);
     if (!isLoggedIn) return setError("로그인 후 주문할 수 있습니다.");
     if (!product) return setError("서비스를 선택해주세요.");
+    if (productUnavailable)
+      return setError("이 상품은 1:1 문의로 접수해 주세요.");
     if (!link.trim()) return setError("주문 링크를 입력해주세요.");
     if (quantity < minQty || quantity > maxQty)
       return setError(`수량은 ${minQty} ~ ${maxQty} 사이로 입력해주세요.`);
@@ -403,7 +413,34 @@ export default function OrderFlow({
         </div>
       </section>
 
-      {!inquiryOnly && (
+      {/* 도매 미연동 상품 선택 시 — 주문 폼 대신 1:1 문의 안내 */}
+      {!inquiryOnly && productUnavailable && (
+        <section className="flex flex-col gap-5 rounded-2xl bg-orange/5 p-8 sm:p-10">
+          <div className="flex flex-col gap-2">
+            <p className="text-lg font-semibold text-navy">이 상품은 1:1 문의로 접수해 주세요</p>
+            <p className="text-base font-normal leading-[26px] text-gray">
+              선택하신 &laquo;{product?.name}&raquo; 은(는) 현재 자동 주문이 지원되지 않는 상품입니다.
+              1:1 문의를 남겨주시면 담당자가 확인 후 안내해 드립니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/inquiry/write"
+              className="rounded-lg bg-orange px-8 py-4 text-base font-medium text-white transition hover:brightness-95"
+            >
+              1:1 문의하기
+            </Link>
+            <Link
+              href="/support"
+              className="rounded-lg bg-white px-8 py-4 text-base font-medium text-gray outline outline-1 outline-line transition hover:text-navy"
+            >
+              고객센터
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {!inquiryOnly && !productUnavailable && (
         <>
       {/* STEP 03 — 상세 설명 (탭별 내용) */}
       <section className="flex flex-col gap-7">

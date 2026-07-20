@@ -4,6 +4,7 @@ import OrderFlow from "@/components/home/OrderFlow";
 import { getCurrentUser } from "@/lib/auth";
 import { getCopy } from "@/lib/copy";
 import { getSettingsMap } from "@/lib/settings";
+import { dispatchActive } from "@/lib/smm";
 import { prisma } from "@/lib/prisma";
 
 function mask(username: string) {
@@ -38,6 +39,7 @@ export default async function Home({
         unitPrice: true,
         minQty: true,
         maxQty: true,
+        providerServiceId: true,
       },
     }),
     // 실시간 주문 티커용 최근 주문 1건
@@ -78,6 +80,7 @@ export default async function Home({
         query={q}
         favoriteIds={favorites.map((f) => f.productId)}
         copy={copy}
+        enforceMapping={dispatchActive()}
       />
     </div>
   );

@@ -38,6 +38,12 @@ export function smmConfigured(): boolean {
   return Boolean(process.env.SMM_API_KEY);
 }
 
+// 실제 도매 발주가 나가는 상태인지. SMM_DISPATCH_DISABLED=1(로컬/테스트)이면 발주하지 않으므로
+// "미연동 상품 주문 차단" 같은 도매 의존 규칙도 이 조건으로 완화한다.
+export function dispatchActive(): boolean {
+  return smmConfigured() && process.env.SMM_DISPATCH_DISABLED !== "1";
+}
+
 export function usdKrw(): number {
   const v = Number(process.env.SMM_USD_KRW);
   return Number.isFinite(v) && v > 0 ? v : 1450;

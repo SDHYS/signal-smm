@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { dispatchOrder, forceRedispatchOrder } from "@/lib/dispatch";
-import { cancelOrders, smmConfigured } from "@/lib/smm";
+import { cancelOrders, smmConfigured, dispatchActive } from "@/lib/smm";
 import { logAdmin } from "@/lib/audit";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string; note?: string };
@@ -41,6 +41,15 @@ export async function createOrder(input: {
   });
   if (!product || !product.isActive)
     return { ok: false, error: "존재하지 않는 상품입니다." };
+
+  // 실발주가 활성인 상태에서 미연동(도매 미보유) 상품은 직접 주문 불가 → 1:1 문의로 안내.
+  // (자동 발주가 안 되는 상품을 팔면 잔액만 빠지고 방치되므로 원천 차단.
+  //  로컬/테스트(SMM_DISPATCH_DISABLED=1)에서는 시드 상품으로 흐름을 검증할 수 있게 완화)
+  if (dispatchActive() && product.providerServiceId == null)
+    return {
+      ok: false,
+      error: "이 상품은 현재 자동 주문이 지원되지 않습니다. 1:1 문의로 접수해 주세요.",
+    };
 
   const qty = Math.floor(input.quantity);
   if (!Number.isSafeInteger(qty) || qty < product.minQty || qty > product.maxQty)
