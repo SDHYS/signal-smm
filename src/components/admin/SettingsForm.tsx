@@ -198,15 +198,15 @@ export default function SettingsForm({
         </div>
       ))}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3">
+        {msg && <span className="text-sm text-gray">{msg}</span>}
         <button
           onClick={save}
           disabled={saving}
-          className="self-start rounded-lg bg-navy px-8 py-3.5 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-lg bg-navy px-8 py-3.5 text-sm font-medium text-white disabled:opacity-60"
         >
           {saving ? "저장 중..." : "전체 저장"}
         </button>
-        {msg && <span className="text-sm text-gray">{msg}</span>}
       </div>
     </div>
   );

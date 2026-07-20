@@ -51,7 +51,8 @@ export default function AdminNotices({ notices }: { notices: NoticeItem[] }) {
           rows={5}
           className="w-full resize-y rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
+          {error && <span className="text-sm text-[#ED1C24]">{error}</span>}
           <button
             onClick={submit}
             disabled={saving}
@@ -59,7 +60,6 @@ export default function AdminNotices({ notices }: { notices: NoticeItem[] }) {
           >
             {saving ? "등록 중..." : "공지 등록"}
           </button>
-          {error && <span className="text-sm text-[#ED1C24]">{error}</span>}
         </div>
       </div>
 

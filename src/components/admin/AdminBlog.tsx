@@ -86,7 +86,8 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
           placeholder="썸네일 이미지 URL (선택)"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
+          {error && <span className="text-sm text-[#ED1C24]">{error}</span>}
           <button
             onClick={submit}
             disabled={saving}
@@ -94,7 +95,6 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
           >
             {saving ? "등록 중..." : "글 등록"}
           </button>
-          {error && <span className="text-sm text-[#ED1C24]">{error}</span>}
         </div>
       </div>
 
