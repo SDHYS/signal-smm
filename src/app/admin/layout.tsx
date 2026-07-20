@@ -23,8 +23,8 @@ export default async function AdminLayout({
               SIGNAL SMM ADMIN
             </span>
           </Link>
-          {/* 우측: 위 = 쇼핑몰, 아래 = 관리자님 + 로그아웃 */}
-          <div className="flex flex-col items-end gap-1.5 text-sm">
+          {/* 우측: 위 = 쇼핑몰(관리자명 왼쪽 선에 맞춤), 아래 = 관리자님 + 로그아웃 */}
+          <div className="flex flex-col items-start gap-1.5 text-sm">
             <Link
               href="/"
               aria-label="쇼핑몰 사이트로"
