@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 
 export default function AdminLogout() {
@@ -12,9 +13,11 @@ export default function AdminLogout() {
         router.push("/login");
         router.refresh();
       }}
-      className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-gray transition hover:bg-soft"
+      aria-label="로그아웃"
+      title="로그아웃"
+      className="text-[#ED1C24] transition hover:opacity-70"
     >
-      로그아웃
+      <LogOut size={20} strokeWidth={2} />
     </button>
   );
 }

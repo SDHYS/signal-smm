@@ -22,13 +22,13 @@ export default async function AdminLayout({
             </span>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-gray">{user.name} 님</span>
             <Link
               href="/"
               className="rounded-lg border border-line px-4 py-2 font-medium text-navy transition hover:bg-soft"
             >
-              사이트로
+              사이트
             </Link>
+            <span className="text-gray">{user.name} 님</span>
             <AdminLogout />
           </div>
         </div>
