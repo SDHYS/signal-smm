@@ -231,6 +231,19 @@ model Notification {
   @@map("notifications")
 }
 
+// ── 요청 제한(고정 윈도우) ────────────────────────────
+// 서버리스 다중 인스턴스에서 공유되는 rate-limit 카운터. 인메모리 Map은
+// 인스턴스별로 분리돼 로그인 무차별 대입 방어가 약화되므로 DB를 공유 저장소로 사용.
+// id = "scope:key" (예: "login-user:alice"), 원자적 upsert로 경쟁 없이 증가.
+model RateLimit {
+  id      String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+  @@map("rate_limits")
+}
+
 // ── 관리자 감사 로그(돈 관련 조치 추적) ─────────────
 // 환불·잔액조정·충전확인·비번초기화 등 민감 조치의 실행자·사유·금액을 불변 기록.
 // adminId=null 은 시스템 자동 처리(크론 동기화 자동환불 등).

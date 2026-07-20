@@ -26,6 +26,7 @@ import { createOrder, setOrderStatus } from "@/app/actions/order";
 import { adjustBalance } from "@/app/actions/members";
 import { answerInquiry } from "@/app/actions/inquiry";
 import { deleteProduct, updateProductPricing } from "@/app/actions/product";
+import { rateLimit } from "@/lib/ratelimit";
 
 const PREFIX = `qb_${Date.now().toString(36)}`;
 const userIds: string[] = [];
@@ -72,6 +73,7 @@ const asGuest = () => (authState.user = null);
 afterAll(async () => {
   const where = { userId: { in: userIds } };
   await prisma.adminAuditLog.deleteMany({ where: { targetId: { in: userIds } } });
+  await prisma.rateLimit.deleteMany({});
   await prisma.notification.deleteMany({ where });
   await prisma.favorite.deleteMany({ where });
   await prisma.inquiry.deleteMany({ where });
@@ -465,5 +467,33 @@ describe("충전 — 입금확인/부분입금/벌크 + 감사 로그", () => {
     expect((await confirmCharge(cr.id)).ok).toBe(false);
     expect((await confirmChargesBulk([cr.id])).ok).toBe(false);
     expect((await prisma.chargeRequest.findUnique({ where: { id: cr.id } }))?.status).toBe("PENDING");
+  });
+});
+
+describe("rate limit — DB 공유 카운터 (서버리스 다중 인스턴스 대응)", () => {
+  it("윈도우 내 max회까지 허용하고 초과는 차단", async () => {
+    const key = `k_${Date.now().toString(36)}`;
+    const seq: boolean[] = [];
+    for (let i = 0; i < 5; i++) {
+      seq.push(await rateLimit("rltest", { max: 3, windowMs: 60_000, key }));
+    }
+    expect(seq).toEqual([true, true, true, false, false]);
+  });
+
+  it("서로 다른 key는 독립적으로 카운트", async () => {
+    const a = `ka_${Date.now().toString(36)}`;
+    const b = `kb_${Date.now().toString(36)}`;
+    expect(await rateLimit("rltest", { max: 1, windowMs: 60_000, key: a })).toBe(true);
+    expect(await rateLimit("rltest", { max: 1, windowMs: 60_000, key: a })).toBe(false);
+    // 다른 key는 영향 없음
+    expect(await rateLimit("rltest", { max: 1, windowMs: 60_000, key: b })).toBe(true);
+  });
+
+  it("윈도우 만료 후 리셋되어 다시 허용", async () => {
+    const key = `kr_${Date.now().toString(36)}`;
+    expect(await rateLimit("rlreset", { max: 1, windowMs: 60, key })).toBe(true);
+    expect(await rateLimit("rlreset", { max: 1, windowMs: 60, key })).toBe(false);
+    await new Promise((r) => setTimeout(r, 90));
+    expect(await rateLimit("rlreset", { max: 1, windowMs: 60, key })).toBe(true);
   });
 });
