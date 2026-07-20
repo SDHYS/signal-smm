@@ -16,13 +16,15 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-soft-2">
       <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-[1100px] items-center justify-between px-8 py-5">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-8">
+          {/* 타이틀 배지 — 클릭 시 관리자 메인으로 */}
+          <Link href="/admin" className="flex items-center gap-3 transition hover:opacity-80">
             <span className="rounded bg-navy px-3 py-1 text-sm font-semibold text-white">
               SIGNAL SMM ADMIN
             </span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
+          </Link>
+          {/* 우측: 위 = 쇼핑몰, 아래 = 관리자님 + 로그아웃 */}
+          <div className="flex flex-col items-end gap-1.5 text-sm">
             <Link
               href="/"
               aria-label="쇼핑몰 사이트로"
@@ -31,8 +33,10 @@ export default async function AdminLayout({
             >
               <Store size={20} strokeWidth={2} />
             </Link>
-            <span className="text-gray">{user.name} 님</span>
-            <AdminLogout />
+            <div className="flex items-center gap-2">
+              <span className="text-gray">{user.name} 님</span>
+              <AdminLogout />
+            </div>
           </div>
         </div>
       </header>
