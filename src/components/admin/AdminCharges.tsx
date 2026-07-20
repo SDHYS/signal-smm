@@ -83,7 +83,8 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
   return (
     <div className="flex flex-col gap-3">
       {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-xl border border-line bg-white">
+        <div className="min-w-[720px]">
         <div className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
           <div className="w-[200px]">회원</div>
           <div className="flex-1">입금자명</div>
@@ -134,6 +135,7 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
             </div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

@@ -16,10 +16,10 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-soft-2">
       <header className="border-b border-line bg-white">
-        <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-8">
+        <div className="mx-auto flex h-16 max-w-[1024px] items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* 타이틀 배지 — 클릭 시 관리자 메인으로 */}
           <Link href="/admin" className="flex items-center gap-3 transition hover:opacity-80">
-            <span className="rounded bg-navy px-3 py-1 text-sm font-semibold text-white">
+            <span className="rounded bg-navy px-2.5 py-1 text-xs font-semibold text-white sm:px-3 sm:text-sm">
               SIGNAL SMM ADMIN
             </span>
           </Link>
@@ -40,10 +40,10 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-[1100px] px-8 pt-8">
+      <div className="mx-auto max-w-[1024px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         <AdminNav />
       </div>
-      <main className="mx-auto max-w-[1100px] px-8 py-8">{children}</main>
+      <main className="mx-auto max-w-[1024px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
     </div>
   );
 }
