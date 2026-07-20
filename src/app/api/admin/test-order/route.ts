@@ -24,6 +24,7 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as {
     username?: string;
+    serviceId?: number;
     productName?: string;
     quantity?: number;
     targetUrl?: string;
@@ -33,17 +34,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "confirm=REAL-DISPATCH 필요(실발주 안전장치)" }, { status: 400 });
 
   const username = body.username?.trim();
+  const serviceId = body.serviceId != null ? Math.floor(Number(body.serviceId)) : null;
   const productName = body.productName?.trim();
   const quantity = Math.floor(Number(body.quantity));
   const targetUrl = body.targetUrl?.trim();
-  if (!username || !productName || !quantity || !targetUrl)
-    return NextResponse.json({ error: "username·productName·quantity·targetUrl 필요" }, { status: 400 });
+  if (!username || (!serviceId && !productName) || !quantity || !targetUrl)
+    return NextResponse.json({ error: "username·(serviceId 또는 productName)·quantity·targetUrl 필요" }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { username } });
   if (!user) return NextResponse.json({ error: "유저 없음" }, { status: 404 });
 
-  const product = await prisma.product.findFirst({ where: { name: productName } });
-  if (!product) return NextResponse.json({ error: "상품 없음" }, { status: 404 });
+  const product = serviceId
+    ? await prisma.product.findFirst({ where: { providerServiceId: serviceId } })
+    : await prisma.product.findFirst({ where: { name: productName } });
+  if (!product)
+    return NextResponse.json({ error: "상품 없음", triedServiceId: serviceId, triedName: productName ?? null }, { status: 404 });
   if (product.providerServiceId == null)
     return NextResponse.json({ error: "상품이 도매 미연동" }, { status: 400 });
   if (quantity < product.minQty || quantity > product.maxQty)
