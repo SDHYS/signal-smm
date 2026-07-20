@@ -86,7 +86,11 @@ function Shell({
   return (
     <div className="-mx-4 flex min-h-[calc(100vh-120px)] items-center justify-center bg-soft-2 px-4 py-10 sm:-mx-8 sm:px-8">
       <div className="flex w-full max-w-[1380px] overflow-hidden rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.06)]">
-        <div className="hidden w-1/2 bg-gradient-to-br from-[#1F2353] via-[#3A4080] to-[#6B80FF] lg:block" />
+        <div
+          className="hidden w-1/2 bg-cover bg-center lg:block"
+          style={{ backgroundImage: "url(/brand/auth-hero.jpg)" }}
+          aria-hidden
+        />
         <div className="flex w-full flex-col gap-10 p-8 sm:p-15 lg:w-1/2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-2">

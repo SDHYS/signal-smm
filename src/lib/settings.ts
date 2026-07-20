@@ -123,7 +123,7 @@ export async function getThemeColors(): Promise<ThemeColors> {
 
 export async function getLogoUrl(): Promise<string> {
   const map = await getSettingsMap();
-  return t(map.logo_url) || "/brand/로고텍스트일체형.png";
+  return t(map.logo_url) || "/brand/logo-main.png";
 }
 
 export const DEFAULT_SIGNUP_CHANNELS = ["구글", "네이버", "아이보스", "지인", "인스타"];
