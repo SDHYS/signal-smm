@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import AdminNav from "@/components/admin/AdminNav";
+import AdminLogout from "@/components/admin/AdminLogout";
 
 export default async function AdminLayout({
   children,
@@ -19,13 +20,16 @@ export default async function AdminLayout({
             <span className="rounded bg-navy px-3 py-1 text-sm font-semibold text-white">
               ADMIN
             </span>
-            <span className="text-lg font-bold text-navy">SignalSMM 관리자</span>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 text-sm">
             <span className="text-gray">{user.name} 님</span>
-            <Link href="/" className="font-medium text-navy hover:underline">
-              사이트로 →
+            <Link
+              href="/"
+              className="rounded-lg border border-line px-4 py-2 font-medium text-navy transition hover:bg-soft"
+            >
+              사이트로
             </Link>
+            <AdminLogout />
           </div>
         </div>
       </header>

@@ -18,13 +18,19 @@ const ACCENT: Record<NonNullable<Stat["accent"]>, string> = {
 
 function Card({ s }: { s: Stat }) {
   const body = (
-    <div className="flex flex-col gap-1 rounded-xl border border-line bg-white p-5 transition hover:border-navy/30">
+    <div className="flex h-full flex-col gap-1 rounded-xl border border-line bg-white p-5 transition hover:border-navy/30">
       <span className="text-sm text-gray">{s.label}</span>
       <span className={`text-2xl font-bold ${ACCENT[s.accent ?? "navy"]}`}>{s.value}</span>
-      {s.sub && <span className="text-xs text-gray">{s.sub}</span>}
+      {s.sub && <span className="mt-auto text-xs text-gray">{s.sub}</span>}
     </div>
   );
-  return s.href ? <Link href={s.href}>{body}</Link> : body;
+  return s.href ? (
+    <Link href={s.href} className="block h-full">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
 }
 
 export default function DashboardStats({ stats }: { stats: Stat[] }) {

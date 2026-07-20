@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/session";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 
-export type ActionResult = { ok: boolean; error?: string };
+export type ActionResult = { ok: boolean; error?: string; redirect?: string };
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -79,7 +79,7 @@ export async function loginAction(input: {
 
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { id: true, passwordHash: true },
+    select: { id: true, passwordHash: true, role: true },
   });
   // 사용자 없음/비번 불일치 모두 동일 메시지 (계정 존재 노출 방지)
   const valid = user && (await bcrypt.compare(input.password, user.passwordHash));
@@ -87,7 +87,8 @@ export async function loginAction(input: {
     return { ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." };
 
   await createSession(user.id, input.keepLogin ?? false);
-  return { ok: true };
+  // 관리자는 로그인 즉시 관리자 페이지로
+  return { ok: true, redirect: user.role === "ADMIN" ? "/admin" : "/" };
 }
 
 export async function logoutAction(): Promise<void> {

@@ -20,7 +20,7 @@ export default function LoginForm({ copy }: { copy: Record<string, string> }) {
     const res = await loginAction({ username: userId, password, keepLogin });
     setLoading(false);
     if (res.ok) {
-      router.push("/");
+      router.push(res.redirect ?? "/");
       router.refresh();
     } else {
       setError(res.error ?? "로그인에 실패했습니다.");
