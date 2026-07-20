@@ -34,10 +34,39 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(id: string, fn: typeof confirmCharge) {
+  async function run(id: string, fn: typeof cancelCharge) {
     setBusy(id);
     setError(null);
     const res = await fn(id);
+    setBusy(null);
+    if (res.ok) router.refresh();
+    else setError(res.error ?? "처리에 실패했습니다.");
+  }
+
+  async function confirm(id: string) {
+    setBusy(id);
+    setError(null);
+    const res = await confirmCharge(id);
+    setBusy(null);
+    if (res.ok) router.refresh();
+    else setError(res.error ?? "처리에 실패했습니다.");
+  }
+
+  // 부분입금: 신청액과 다른 실제 입금액을 관리자가 지정해 적립
+  async function confirmPartial(c: PendingCharge) {
+    const input = prompt(
+      `부분입금 처리 — 실제 적립할 금액(원)을 입력하세요.\n신청 금액: ${c.amount.toLocaleString()}원`,
+      String(c.amount),
+    );
+    if (input === null) return;
+    const credit = Math.floor(Number(input.replace(/[^0-9]/g, "")));
+    if (!credit || credit <= 0) {
+      setError("적립 금액이 올바르지 않습니다.");
+      return;
+    }
+    setBusy(c.id);
+    setError(null);
+    const res = await confirmCharge(c.id, { creditAmount: credit });
     setBusy(null);
     if (res.ok) router.refresh();
     else setError(res.error ?? "처리에 실패했습니다.");
@@ -60,7 +89,7 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
           <div className="flex-1">입금자명</div>
           <div className="w-[120px] text-right">충전금액</div>
           <div className="w-[140px] text-right">입금액</div>
-          <div className="w-[120px]" />
+          <div className="w-[180px]" />
         </div>
         {charges.map((c) => (
           <div key={c.id} className="flex items-center border-t border-line px-6 py-4 text-sm">
@@ -79,7 +108,7 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
             </div>
             <div className="w-[120px] text-right font-medium text-navy">{won(c.amount)}</div>
             <div className="w-[140px] text-right font-semibold text-orange">{won(c.total)}</div>
-            <div className="flex w-[120px] items-center justify-end gap-2">
+            <div className="flex w-[180px] items-center justify-end gap-2">
               <button
                 onClick={() => run(c.id, cancelCharge)}
                 disabled={busy === c.id}
@@ -88,7 +117,15 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
                 취소
               </button>
               <button
-                onClick={() => run(c.id, confirmCharge)}
+                onClick={() => confirmPartial(c)}
+                disabled={busy === c.id}
+                className="rounded border border-line px-3 py-2 text-xs font-medium text-navy transition hover:bg-soft disabled:opacity-50"
+                title="실제 입금액이 신청액과 다를 때"
+              >
+                부분입금
+              </button>
+              <button
+                onClick={() => confirm(c.id)}
                 disabled={busy === c.id}
                 className="rounded bg-blue px-3 py-2 text-xs font-medium text-white transition hover:brightness-95 disabled:opacity-50"
               >

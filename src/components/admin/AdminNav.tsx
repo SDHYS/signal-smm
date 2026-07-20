@@ -4,13 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { label: "입금확인", href: "/admin" },
+  { label: "대시보드", href: "/admin" },
+  { label: "충전관리", href: "/admin/charges" },
   { label: "주문관리", href: "/admin/orders" },
   { label: "상품관리", href: "/admin/products" },
   { label: "회원관리", href: "/admin/members" },
   { label: "공지사항", href: "/admin/notices" },
   { label: "블로그", href: "/admin/blog" },
   { label: "1:1 문의", href: "/admin/inquiries" },
+  { label: "감사로그", href: "/admin/audit" },
   { label: "문구", href: "/admin/texts" },
   { label: "설정", href: "/admin/settings" },
 ];

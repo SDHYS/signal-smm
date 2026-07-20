@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "./prisma";
 import { getOrdersStatus, smmConfigured } from "./smm";
 import { notify } from "./notify";
+import { logAdmin } from "./audit";
 
 export type SyncSummary = {
   checked: number;
@@ -145,12 +146,22 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
         });
         if (claimed) {
           summary.partial++;
-          if (refund > 0)
+          if (refund > 0) {
             await notify(item.order.userId, {
               type: "order",
               title: `주문 #${item.order.orderNo}이(가) 부분 완료되었습니다. 미처리 ${remains.toLocaleString()}개(${refund.toLocaleString()}원)가 잔액으로 환불되었습니다.`,
               link: "/orders",
             });
+            await logAdmin({
+              action: "sync.refund",
+              targetType: "order",
+              targetId: item.order.id,
+              targetLabel: `#${item.order.orderNo}`,
+              amount: refund,
+              reason: `도매 부분완료 — 미처리 ${remains.toLocaleString()}개 자동환불`,
+              meta: { kind: "partial", remains, providerStatus: status },
+            });
+          }
         }
       } else if (
         s === "canceled" ||
@@ -161,7 +172,7 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
         s === "error"
       ) {
         // 도매 측 취소/실패/에러: 전액 환불
-        const claimed = await prisma.$transaction(async (tx) => {
+        const refunded = await prisma.$transaction(async (tx) => {
           const upd = await tx.order.updateMany({
             where: { id: item.order.id, status: { in: ["PAID", "PROCESSING"] } },
             data: {
@@ -170,24 +181,33 @@ export async function syncProviderOrders(): Promise<SyncSummary | { skipped: str
               adminMemo: `도매 측 ${status} — 전액 자동 환불`,
             },
           });
-          if (upd.count === 1) {
-            const order = await tx.order.findUnique({
-              where: { id: item.order.id },
-              select: { totalAmount: true },
-            });
-            await tx.user.update({
-              where: { id: item.order.userId },
-              data: { balance: { increment: order?.totalAmount ?? 0 } },
-            });
-          }
-          return upd.count === 1;
+          if (upd.count !== 1) return null;
+          const order = await tx.order.findUnique({
+            where: { id: item.order.id },
+            select: { totalAmount: true },
+          });
+          const amt = order?.totalAmount ?? 0;
+          await tx.user.update({
+            where: { id: item.order.userId },
+            data: { balance: { increment: amt } },
+          });
+          return amt;
         });
-        if (claimed) {
+        if (refunded !== null) {
           summary.cancelled++;
           await notify(item.order.userId, {
             type: "order",
             title: `주문 #${item.order.orderNo}이(가) 처리 불가로 취소되어 전액 환불되었습니다.`,
             link: "/orders",
+          });
+          await logAdmin({
+            action: "sync.refund",
+            targetType: "order",
+            targetId: item.order.id,
+            targetLabel: `#${item.order.orderNo}`,
+            amount: refunded,
+            reason: `도매 측 ${status} — 전액 자동환불`,
+            meta: { kind: "cancel", providerStatus: status },
           });
         }
       } else if (

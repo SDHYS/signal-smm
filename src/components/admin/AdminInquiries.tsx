@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { answerInquiry } from "@/app/actions/inquiry";
 
+export type UserContext = {
+  balance: number;
+  orderCount: number;
+  spent: number;
+  chargedTotal: number;
+  pendingCharges: number;
+};
+
 export type AdminInquiry = {
   id: string;
   title: string;
@@ -13,7 +21,10 @@ export type AdminInquiry = {
   status: "PENDING" | "ANSWERED";
   answer: string | null;
   date: string;
+  ctx: UserContext;
 };
+
+const won = (n: number) => `${n.toLocaleString()}원`;
 
 function Item({ q }: { q: AdminInquiry }) {
   const router = useRouter();
@@ -42,6 +53,16 @@ function Item({ q }: { q: AdminInquiry }) {
           {q.userName} (@{q.username}) · {q.date}
         </span>
       </div>
+      {/* 문의자 컨텍스트 — 답변 판단에 필요한 회원 상황 */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg border border-line bg-white px-4 py-2.5 text-xs">
+        <Ctx label="보유잔액" value={won(q.ctx.balance)} accent />
+        <Ctx label="누적주문" value={`${q.ctx.orderCount}건`} />
+        <Ctx label="누적결제" value={won(q.ctx.spent)} />
+        <Ctx label="누적충전" value={won(q.ctx.chargedTotal)} />
+        {q.ctx.pendingCharges > 0 && (
+          <Ctx label="입금대기" value={`${q.ctx.pendingCharges}건`} warn />
+        )}
+      </div>
       <p className="whitespace-pre-line rounded-lg bg-soft p-4 text-sm text-gray">{q.content}</p>
       <textarea
         value={answer}
@@ -58,6 +79,17 @@ function Item({ q }: { q: AdminInquiry }) {
         {saving ? "등록 중..." : q.status === "ANSWERED" ? "답변 수정" : "답변 등록"}
       </button>
     </div>
+  );
+}
+
+function Ctx({ label, value, accent, warn }: { label: string; value: string; accent?: boolean; warn?: boolean }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="text-gray">{label}</span>
+      <span className={`font-semibold ${warn ? "text-orange" : accent ? "text-blue" : "text-navy"}`}>
+        {value}
+      </span>
+    </span>
   );
 }
 

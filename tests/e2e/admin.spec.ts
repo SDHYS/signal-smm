@@ -75,6 +75,30 @@ test.describe("관리자(로그인 세션)", () => {
     await expect(page.getByRole("heading", { name: "기본 정보" })).toHaveCount(0);
   });
 
+  test("충전 관리 — 상태 탭이 status 쿼리 반영 + 검색", async ({ page }) => {
+    await page.goto("/admin/charges");
+    await expect(page.getByRole("heading", { name: "충전 관리" })).toBeVisible();
+    for (const t of ["전체", "입금대기", "충전완료", "취소"]) {
+      await expect(page.getByRole("link", { name: new RegExp(`^${t}`) })).toBeVisible();
+    }
+    await page.getByRole("link", { name: /^충전완료/ }).click();
+    await page.waitForURL((u) => u.search.includes("status=CONFIRMED"));
+    await page.getByPlaceholder(/입금자명/).fill("zzz-nomatch-xyz");
+    await page.getByRole("button", { name: "검색" }).click();
+    await page.waitForURL((u) => u.search.includes("q=zzz-nomatch-xyz"));
+    await expect(page.getByText("해당 조건의 충전 신청이 없습니다.")).toBeVisible();
+  });
+
+  test("감사 로그 — 페이지 렌더 + 그룹 필터 탭", async ({ page }) => {
+    await page.goto("/admin/audit");
+    await expect(page.getByRole("heading", { name: "감사 로그" })).toBeVisible();
+    for (const t of ["전체", "주문 환불", "자동 환불", "충전 확인", "잔액 조정"]) {
+      await expect(page.getByRole("link", { name: t, exact: true })).toBeVisible();
+    }
+    await page.getByRole("link", { name: "자동 환불", exact: true }).click();
+    await page.waitForURL((u) => u.search.includes("group=auto"));
+  });
+
 
   test("설정 — 고객센터/회사소개 입력이 공개 페이지에 반영", async ({ page }) => {
     // 저장

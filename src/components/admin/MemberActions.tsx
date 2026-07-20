@@ -14,6 +14,7 @@ export default function MemberActions({
 }) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [tempPw, setTempPw] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
@@ -24,10 +25,13 @@ export default function MemberActions({
     if (!v) return alert("조정 금액을 입력해주세요.");
     if (sign === -1 && !confirm(`${v.toLocaleString()}원을 차감할까요?`)) return;
     setBusy(true);
-    const res = await adjustBalance(userId, sign * v);
+    const res = await adjustBalance(userId, sign * v, reason.trim() || undefined);
     setBusy(false);
     if (!res.ok) alert(res.error);
-    else setAmount("");
+    else {
+      setAmount("");
+      setReason("");
+    }
     router.refresh();
   }
 
@@ -82,6 +86,13 @@ export default function MemberActions({
             차감
           </button>
         </div>
+        <input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="조정 사유 (선택 — 감사 로그에 기록)"
+          aria-label="잔액 조정 사유"
+          className="w-full rounded border border-line px-3 py-2 text-sm text-navy placeholder:text-gray focus:border-blue focus:outline-none"
+        />
       </div>
 
       {/* 비밀번호 초기화 */}

@@ -7,6 +7,7 @@ import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { dispatchOrder, forceRedispatchOrder } from "@/lib/dispatch";
 import { cancelOrders, smmConfigured } from "@/lib/smm";
+import { logAdmin } from "@/lib/audit";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string; note?: string };
 
@@ -234,6 +235,15 @@ export async function setOrderStatus(
       link: "/orders",
     });
 
+  await logAdmin({
+    action: "order.status",
+    targetType: "order",
+    targetId: id,
+    targetLabel: order ? `#${order.orderNo}` : id,
+    meta: { status },
+    admin: { id: admin.id, name: admin.name },
+  });
+
   revalidatePath("/admin/orders");
   revalidatePath("/orders");
   return { ok: true };
@@ -256,7 +266,7 @@ export async function setOrderMemo(id: string, memo: string): Promise<OrderResul
 }
 
 // ── 관리자: 주문 환불(취소 + 잔액 복구) ───────────────
-export async function refundOrder(id: string): Promise<OrderResult> {
+export async function refundOrder(id: string, reason?: string): Promise<OrderResult> {
   const admin = await getCurrentUser();
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
@@ -316,6 +326,17 @@ export async function refundOrder(id: string): Promise<OrderResult> {
     type: "order",
     title: `주문 #${order.orderNo}이(가) 환불되었습니다. ${order.totalAmount.toLocaleString()}원이 잔액으로 복구되었습니다.`,
     link: "/orders",
+  });
+
+  await logAdmin({
+    action: "order.refund",
+    targetType: "order",
+    targetId: id,
+    targetLabel: `#${order.orderNo}`,
+    amount: order.totalAmount,
+    reason: reason ?? null,
+    meta: cancelNote ? { cancelNote } : null,
+    admin: { id: admin.id, name: admin.name },
   });
 
   revalidatePath("/admin/orders");

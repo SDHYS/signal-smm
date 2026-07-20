@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { logAdmin } from "@/lib/audit";
 
 export type Result = { ok: boolean; error?: string; data?: string };
 
@@ -14,8 +15,13 @@ async function requireAdmin() {
 }
 
 // 잔액 수동 조정 (양수=증액, 음수=차감)
-export async function adjustBalance(userId: string, delta: number): Promise<Result> {
-  if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
+export async function adjustBalance(
+  userId: string,
+  delta: number,
+  reason?: string,
+): Promise<Result> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "권한이 없습니다." };
 
   if (!Number.isFinite(delta))
     return { ok: false, error: "조정 금액이 올바르지 않습니다." };
@@ -43,13 +49,23 @@ export async function adjustBalance(userId: string, delta: number): Promise<Resu
     link: "/charge",
   });
 
+  await logAdmin({
+    action: "balance.adjust",
+    targetType: "user",
+    targetId: userId,
+    amount,
+    reason: reason ?? null,
+    admin: { id: admin.id, name: admin.name },
+  });
+
   revalidatePath("/admin/members");
   return { ok: true };
 }
 
 // 비밀번호 초기화 → 임시 비밀번호를 관리자에게 1회 표시
 export async function resetPassword(userId: string): Promise<Result> {
-  if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "권한이 없습니다." };
 
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
   const temp = Array.from(
@@ -66,6 +82,13 @@ export async function resetPassword(userId: string): Promise<Result> {
     type: "message",
     title: "비밀번호가 초기화되었습니다. 로그인 후 마이페이지에서 변경해주세요.",
     link: "/mypage",
+  });
+
+  await logAdmin({
+    action: "password.reset",
+    targetType: "user",
+    targetId: userId,
+    admin: { id: admin.id, name: admin.name },
   });
 
   return { ok: true, data: temp };

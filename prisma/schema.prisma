@@ -231,6 +231,28 @@ model Notification {
   @@map("notifications")
 }
 
+// ── 관리자 감사 로그(돈 관련 조치 추적) ─────────────
+// 환불·잔액조정·충전확인·비번초기화 등 민감 조치의 실행자·사유·금액을 불변 기록.
+// adminId=null 은 시스템 자동 처리(크론 동기화 자동환불 등).
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String? // 실행 관리자 id (시스템 자동이면 null)
+  adminName   String   @default("시스템") // 실행자 표시명 스냅샷
+  action      String // charge.confirm | charge.cancel | order.refund | order.status | balance.adjust | password.reset | sync.refund
+  targetType  String // charge | order | user
+  targetId    String
+  targetLabel String? // 사람이 읽는 대상 라벨(주문번호/회원명 등)
+  reason      String?  @db.Text // 조치 사유
+  amount      Int? // 금액 변화(환불액/조정액/적립액)
+  meta        String?  @db.Text // 추가 상세(JSON)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
+}
+
 // ── 즐겨찾기(회원별 상품) ─────────────────────────────
 model Favorite {
   id        String   @id @default(cuid())

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { getVatRate } from "@/lib/settings";
+import { logAdmin } from "@/lib/audit";
 
 export type ActionResult = { ok: boolean; error?: string; id?: string };
 
@@ -80,13 +81,26 @@ export async function cancelMyCharge(id: string): Promise<ActionResult> {
 }
 
 // ── 관리자: 입금 확인 → 잔액 반영 ─────────────────────
-export async function confirmCharge(id: string): Promise<ActionResult> {
+// opts.creditAmount: 실제 입금액이 신청액과 다를 때 적립할 실제 금액(부분입금).
+// 미지정이면 신청 amount 그대로 적립.
+export async function confirmCharge(
+  id: string,
+  opts?: { creditAmount?: number; reason?: string },
+): Promise<ActionResult> {
   const admin = await getCurrentUser();
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
   const cr = await prisma.chargeRequest.findUnique({ where: { id } });
   if (!cr) return { ok: false, error: "존재하지 않는 신청입니다." };
+
+  // 적립액 결정: 부분입금이면 관리자가 실제 적립할 금액을 지정.
+  const partial = opts?.creditAmount != null && Math.floor(opts.creditAmount) !== cr.amount;
+  const credit = partial ? Math.floor(opts!.creditAmount!) : cr.amount;
+  if (!Number.isSafeInteger(credit) || credit <= 0)
+    return { ok: false, error: "적립 금액이 올바르지 않습니다." };
+  if (credit > MAX_CHARGE)
+    return { ok: false, error: "적립 금액이 한도를 초과했습니다." };
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -103,7 +117,7 @@ export async function confirmCharge(id: string): Promise<ActionResult> {
 
       await tx.user.update({
         where: { id: cr.userId },
-        data: { balance: { increment: cr.amount } },
+        data: { balance: { increment: credit } },
       });
     });
   } catch (e) {
@@ -115,13 +129,48 @@ export async function confirmCharge(id: string): Promise<ActionResult> {
 
   await notify(cr.userId, {
     type: "charge",
-    title: `충전 완료 — ${cr.amount.toLocaleString()}원이 잔액에 반영되었습니다.`,
+    title: `충전 완료 — ${credit.toLocaleString()}원이 잔액에 반영되었습니다.`,
     link: "/charge",
   });
 
+  await logAdmin({
+    action: partial ? "charge.confirm.partial" : "charge.confirm",
+    targetType: "charge",
+    targetId: cr.id,
+    targetLabel: `${cr.depositorName} · 신청 ${cr.amount.toLocaleString()}원`,
+    amount: credit,
+    reason: opts?.reason ?? (partial ? `부분입금: 신청 ${cr.amount.toLocaleString()}원 → 적립 ${credit.toLocaleString()}원` : null),
+    admin: { id: admin.id, name: admin.name },
+  });
+
   revalidatePath("/admin");
+  revalidatePath("/admin/charges");
   revalidatePath("/charge");
   return { ok: true };
+}
+
+// ── 관리자: 여러 입금대기 신청 일괄 확인 ───────────────
+export async function confirmChargesBulk(
+  ids: string[],
+): Promise<{ ok: boolean; confirmed: number; failed: number; error?: string }> {
+  const admin = await getCurrentUser();
+  if (!admin || admin.role !== "ADMIN")
+    return { ok: false, confirmed: 0, failed: 0, error: "권한이 없습니다." };
+  if (!Array.isArray(ids) || ids.length === 0)
+    return { ok: false, confirmed: 0, failed: 0, error: "선택된 신청이 없습니다." };
+
+  let confirmed = 0;
+  let failed = 0;
+  // 각 건을 독립 처리 — 한 건 실패가 나머지를 막지 않도록 순차 처리(원자성은 confirmCharge 내부 보장)
+  for (const id of ids.slice(0, 200)) {
+    const res = await confirmCharge(id);
+    if (res.ok) confirmed++;
+    else failed++;
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/charges");
+  return { ok: true, confirmed, failed };
 }
 
 export async function cancelCharge(id: string): Promise<ActionResult> {
@@ -144,7 +193,17 @@ export async function cancelCharge(id: string): Promise<ActionResult> {
     link: "/charge",
   });
 
+  await logAdmin({
+    action: "charge.cancel",
+    targetType: "charge",
+    targetId: cr.id,
+    targetLabel: `${cr.depositorName} · ${cr.amount.toLocaleString()}원`,
+    amount: cr.amount,
+    admin: { id: admin.id, name: admin.name },
+  });
+
   revalidatePath("/admin");
+  revalidatePath("/admin/charges");
   revalidatePath("/charge");
   return { ok: true };
 }

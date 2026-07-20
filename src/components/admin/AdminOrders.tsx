@@ -60,9 +60,12 @@ function Row({ o }: { o: AdminOrder }) {
   }
 
   async function refund() {
-    if (!confirm(`주문 #${o.orderNo}을(를) 환불할까요? 잔액이 복구됩니다.`)) return;
+    const reason = prompt(
+      `주문 #${o.orderNo}을(를) 환불합니다. 잔액이 복구됩니다.\n환불 사유를 입력하세요(선택, 감사 로그에 기록):`,
+    );
+    if (reason === null) return; // 취소
     setBusy(true);
-    const res = await refundOrder(o.id);
+    const res = await refundOrder(o.id, reason.trim() || undefined);
     setBusy(false);
     if (!res.ok) alert(res.error ?? "처리에 실패했습니다.");
     else if (res.note) alert(res.note);

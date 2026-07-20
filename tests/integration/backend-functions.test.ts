@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { __setTestIp } from "../stubs/next-headers";
 
-const authState: { user: { id: string; role: string } | null } = { user: null };
+const authState: { user: { id: string; role: string; name?: string } | null } = { user: null };
 vi.mock("@/lib/auth", () => ({
   getCurrentUser: async () => authState.user,
 }));
@@ -16,7 +16,12 @@ import { signupAction, loginAction } from "@/app/actions/auth";
 import { updateProfile, changePassword, findUsername } from "@/app/actions/user";
 import { toggleFavorite } from "@/app/actions/favorite";
 import { markNotificationRead, sendMessage } from "@/app/actions/notification";
-import { cancelMyCharge, createChargeRequest } from "@/app/actions/charge";
+import {
+  cancelMyCharge,
+  createChargeRequest,
+  confirmCharge,
+  confirmChargesBulk,
+} from "@/app/actions/charge";
 import { createOrder, setOrderStatus } from "@/app/actions/order";
 import { adjustBalance } from "@/app/actions/members";
 import { answerInquiry } from "@/app/actions/inquiry";
@@ -58,12 +63,15 @@ async function makeProduct(unitPrice = 100, isActive = true) {
   return p;
 }
 
-const asUser = (u: { id: string }) => (authState.user = { id: u.id, role: "USER" });
-const asAdmin = (u: { id: string }) => (authState.user = { id: u.id, role: "ADMIN" });
+const asUser = (u: { id: string; name?: string }) =>
+  (authState.user = { id: u.id, role: "USER", name: u.name });
+const asAdmin = (u: { id: string; name?: string }) =>
+  (authState.user = { id: u.id, role: "ADMIN", name: u.name ?? "관리자" });
 const asGuest = () => (authState.user = null);
 
 afterAll(async () => {
   const where = { userId: { in: userIds } };
+  await prisma.adminAuditLog.deleteMany({ where: { targetId: { in: userIds } } });
   await prisma.notification.deleteMany({ where });
   await prisma.favorite.deleteMany({ where });
   await prisma.inquiry.deleteMany({ where });
@@ -378,5 +386,84 @@ describe("충전 — 입력 검증", () => {
     expect(cr?.total).toBe(11_000);
     const detail = JSON.parse(cr?.receiptDetail ?? "{}");
     expect(detail).toEqual({ 회사명: "테스트(주)" }); // 빈 값 제거 확인
+  });
+});
+
+describe("충전 — 입금확인/부분입금/벌크 + 감사 로그", () => {
+  async function pendingCharge(userId: string, amount = 10_000) {
+    return prisma.chargeRequest.create({
+      data: {
+        userId,
+        amount,
+        vat: Math.round(amount * 0.1),
+        total: Math.round(amount * 1.1),
+        depositorName: "홍길동",
+        receiptType: "신청안함",
+      },
+    });
+  }
+
+  it("입금확인: 신청액을 잔액에 적립하고 감사 로그(charge.confirm) 기록", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u = await makeUser(0);
+    const cr = await pendingCharge(u.id, 10_000);
+    asAdmin(admin);
+    expect((await confirmCharge(cr.id)).ok).toBe(true);
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(10_000); // 신청액 적립 (부가세 제외)
+    const log = await prisma.adminAuditLog.findFirst({
+      where: { action: "charge.confirm", targetId: cr.id },
+    });
+    expect(log?.amount).toBe(10_000);
+    expect(log?.adminName).toBe(admin.name);
+  });
+
+  it("부분입금: 실제 입금액만 적립하고 charge.confirm.partial 로그", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u = await makeUser(0);
+    const cr = await pendingCharge(u.id, 50_000);
+    asAdmin(admin);
+    // 신청 5만원인데 실제 3만원만 입금됨
+    expect((await confirmCharge(cr.id, { creditAmount: 30_000 })).ok).toBe(true);
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(30_000); // 신청액 아닌 실제 적립액
+    const log = await prisma.adminAuditLog.findFirst({
+      where: { action: "charge.confirm.partial", targetId: cr.id },
+    });
+    expect(log?.amount).toBe(30_000);
+  });
+
+  it("이중확인 방지: 이미 확인된 신청 재확인은 실패하고 잔액 재적립 없음", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u = await makeUser(0);
+    const cr = await pendingCharge(u.id, 10_000);
+    asAdmin(admin);
+    expect((await confirmCharge(cr.id)).ok).toBe(true);
+    expect((await confirmCharge(cr.id)).ok).toBe(false); // 이미 처리됨
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    expect(after?.balance).toBe(10_000); // 1회만 적립
+  });
+
+  it("벌크 확인: 여러 대기 신청을 일괄 확인, 각 회원 잔액 반영", async () => {
+    const admin = await makeUser(0, "ADMIN");
+    const u1 = await makeUser(0);
+    const u2 = await makeUser(0);
+    const c1 = await pendingCharge(u1.id, 10_000);
+    const c2 = await pendingCharge(u2.id, 20_000);
+    asAdmin(admin);
+    const res = await confirmChargesBulk([c1.id, c2.id]);
+    expect(res.confirmed).toBe(2);
+    expect(res.failed).toBe(0);
+    expect((await prisma.user.findUnique({ where: { id: u1.id } }))?.balance).toBe(10_000);
+    expect((await prisma.user.findUnique({ where: { id: u2.id } }))?.balance).toBe(20_000);
+  });
+
+  it("일반 유저는 입금확인/벌크 거절", async () => {
+    const u = await makeUser(0);
+    const cr = await pendingCharge(u.id);
+    asUser(u);
+    expect((await confirmCharge(cr.id)).ok).toBe(false);
+    expect((await confirmChargesBulk([cr.id])).ok).toBe(false);
+    expect((await prisma.chargeRequest.findUnique({ where: { id: cr.id } }))?.status).toBe("PENDING");
   });
 });
