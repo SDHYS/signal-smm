@@ -205,6 +205,13 @@ export async function setOrderStatus(
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
+  // 허용 매트릭스에 없는 상태(CANCELLED/PENDING_PAYMENT 등)는 거부.
+  // 이 가드가 없으면 ALLOWED_FROM[status]=undefined → Prisma가 from-필터를 무시하고
+  // id만으로 매칭 → 환불·감사 없이 취소/다운그레이드되는 우회가 발생한다.
+  // (환불은 refundOrder만 통해야 잔액 복구·감사가 함께 이뤄진다.)
+  if (!ALLOWED_FROM[status])
+    return { ok: false, error: "지원하지 않는 상태 변경입니다." };
+
   // 도매 발주된 주문의 수동 '완료'는 금지 — 도매가 Partial로 끝나면 자동 잔여환불이
   // 무효화되어 고객이 손해본다. 도매 연동 주문은 상태 동기화가 완료/환불을 결정한다.
   if (status === "COMPLETED") {

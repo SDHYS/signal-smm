@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
+import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type Result = { ok: boolean; error?: string };
 
@@ -36,10 +38,15 @@ export async function sendMessage(input: {
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
+  // 관리자 쪽지 과도 발송/스팸 방지 (분당 30건)
+  if (!(await rateLimit("send-message", { max: 30, windowMs: 60_000, key: admin.id })))
+    return { ok: false, error: RATE_LIMITED_MSG };
+
   const username = input.username?.trim();
   const body = input.body?.trim();
   if (!username || !body)
     return { ok: false, error: "받는 회원 아이디와 내용을 입력해주세요." };
+  if (overLen(body, LIMITS.message)) return { ok: false, error: "쪽지가 너무 깁니다." };
 
   const target = await prisma.user.findUnique({
     where: { username },

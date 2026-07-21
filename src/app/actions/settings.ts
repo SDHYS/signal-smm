@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { SETTING_KEYS } from "@/lib/settings";
 import { COPY_KEYS } from "@/lib/copy";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export async function updateSettings(
   input: Record<string, string>,
@@ -16,6 +17,9 @@ export async function updateSettings(
   const entries = Object.entries(input).filter(
     ([k]) => (SETTING_KEYS as readonly string[]).includes(k) || COPY_KEYS.has(k),
   );
+  // 값 길이 상한 — 약관/소개/문구 등 @db.Text 필드에 거대한 값 저장·렌더 DoS 방지
+  if (entries.some(([, v]) => overLen(v, LIMITS.settingValue)))
+    return { ok: false, error: "설정 값이 너무 깁니다." };
 
   await prisma.$transaction(
     entries.map(([key, value]) =>

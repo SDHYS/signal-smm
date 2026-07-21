@@ -21,7 +21,7 @@ export default async function NoticePage({
       take: 50,
       select: { id: true, title: true, createdAt: true },
     }),
-    prisma.notice.count(),
+    prisma.notice.count({ where }),
   ]);
 
   return (

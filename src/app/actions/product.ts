@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getServices, smmConfigured } from "@/lib/smm";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type Result = { ok: boolean; error?: string };
+
+// 32-bit Int 컬럼 상한 아래로 제한 — 초과 값은 앱 검증 통과 후 INSERT에서 int4 overflow(500)
+const MAX_INT = 2_000_000_000;
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -26,13 +30,16 @@ export async function createProduct(input: {
   const category = input.category?.trim();
   if (!name || !category)
     return { ok: false, error: "카테고리와 상품명을 입력해주세요." };
-  if (!Number.isFinite(input.unitPrice) || input.unitPrice <= 0)
-    return { ok: false, error: "단가는 1원 이상이어야 합니다." };
+  if (overLen(name, LIMITS.shortText) || overLen(category, LIMITS.shortText) || overLen(input.description, LIMITS.content))
+    return { ok: false, error: "입력이 너무 깁니다." };
+  if (!Number.isFinite(input.unitPrice) || input.unitPrice <= 0 || input.unitPrice > MAX_INT)
+    return { ok: false, error: "단가가 올바르지 않습니다." };
   if (
     !Number.isFinite(input.minQty) ||
     !Number.isFinite(input.maxQty) ||
     input.minQty < 1 ||
-    input.maxQty < input.minQty
+    input.maxQty < input.minQty ||
+    input.maxQty > MAX_INT
   )
     return { ok: false, error: "수량 범위가 올바르지 않습니다." };
 
@@ -68,9 +75,9 @@ export async function updateProductPricing(
   const unitPrice = Math.floor(input.unitPrice);
   const minQty = Math.floor(input.minQty);
   const maxQty = Math.floor(input.maxQty);
-  if (!Number.isSafeInteger(unitPrice) || unitPrice < 1)
-    return { ok: false, error: "단가는 1원 이상이어야 합니다." };
-  if (!Number.isSafeInteger(minQty) || minQty < 1 || !Number.isSafeInteger(maxQty) || maxQty < minQty)
+  if (!Number.isSafeInteger(unitPrice) || unitPrice < 1 || unitPrice > MAX_INT)
+    return { ok: false, error: "단가가 올바르지 않습니다." };
+  if (!Number.isSafeInteger(minQty) || minQty < 1 || !Number.isSafeInteger(maxQty) || maxQty < minQty || maxQty > MAX_INT)
     return { ok: false, error: "수량 범위가 올바르지 않습니다." };
 
   await prisma.product.update({

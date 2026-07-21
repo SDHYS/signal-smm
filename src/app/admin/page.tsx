@@ -23,6 +23,7 @@ export default async function AdminPage() {
 
   const [
     pending,
+    pendingCount,
     confirmedCount,
     processed,
     memberCount,
@@ -33,11 +34,14 @@ export default async function AdminPage() {
     recentOrders,
     failedDispatchCount,
   ] = await Promise.all([
+    // 표시는 최근 100건까지 (백로그가 커도 대시보드 메모리·렌더 폭주 방지)
     prisma.chargeRequest.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
+      take: 100,
       include: { user: { select: { username: true, name: true } } },
     }),
+    prisma.chargeRequest.count({ where: { status: "PENDING" } }),
     prisma.chargeRequest.count({ where: { status: "CONFIRMED" } }),
     prisma.chargeRequest.findMany({
       where: { status: { not: "PENDING" } },
@@ -109,7 +113,7 @@ export default async function AdminPage() {
     },
     {
       label: "입금 대기",
-      value: `${pending.length}건`,
+      value: `${pendingCount}건`,
       accent: "orange",
       sub: "처리 필요",
     },
@@ -173,7 +177,7 @@ export default async function AdminPage() {
       <div className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold text-navy">충전 입금 확인</h2>
         <p className="text-base text-gray">
-          입금 대기 <span className="font-semibold text-orange">{charges.length}</span>건 · 처리완료{" "}
+          입금 대기 <span className="font-semibold text-orange">{pendingCount}</span>건{pendingCount > charges.length && ` (${charges.length}건 표시)`} · 처리완료{" "}
           {confirmedCount}건
         </p>
       </div>

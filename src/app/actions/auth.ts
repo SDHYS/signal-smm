@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/session";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type ActionResult = { ok: boolean; error?: string; redirect?: string };
 
@@ -27,9 +28,14 @@ export async function signupAction(input: SignupInput): Promise<ActionResult> {
 
   // 유효성 검사
   if (username.length < 3) return { ok: false, error: "아이디는 3자 이상이어야 합니다." };
+  if (username.length > LIMITS.username || /\s/.test(username))
+    return { ok: false, error: `아이디는 ${LIMITS.username}자 이하, 공백 없이 입력해주세요.` };
   if (!emailRe.test(email)) return { ok: false, error: "이메일 형식이 올바르지 않습니다." };
+  if (overLen(email, LIMITS.email)) return { ok: false, error: "이메일이 너무 깁니다." };
   if (!password || password.length < 8)
     return { ok: false, error: "비밀번호는 8자 이상이어야 합니다." };
+  if (password.length > LIMITS.password)
+    return { ok: false, error: `비밀번호는 ${LIMITS.password}자 이하로 입력해주세요.` };
   if (password !== passwordConfirm)
     return { ok: false, error: "비밀번호가 일치하지 않습니다." };
 
@@ -52,7 +58,7 @@ export async function signupAction(input: SignupInput): Promise<ActionResult> {
       email,
       passwordHash,
       name: username,
-      signupChannel: input.signupChannel ?? null,
+      signupChannel: input.signupChannel?.slice(0, LIMITS.shortText) ?? null,
     },
     select: { id: true },
   });

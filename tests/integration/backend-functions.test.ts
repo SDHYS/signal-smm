@@ -24,7 +24,7 @@ import {
 } from "@/app/actions/charge";
 import { createOrder, setOrderStatus } from "@/app/actions/order";
 import { adjustBalance } from "@/app/actions/members";
-import { answerInquiry } from "@/app/actions/inquiry";
+import { answerInquiry, createInquiry } from "@/app/actions/inquiry";
 import { deleteProduct, updateProductPricing } from "@/app/actions/product";
 import { rateLimit } from "@/lib/ratelimit";
 
@@ -253,6 +253,13 @@ describe("주문 — 상품 상태/권한/상태전이", () => {
     expect((await setOrderStatus(cancelled.id, "PAID")).ok).toBe(false);
     expect((await setOrderStatus(cancelled.id, "PROCESSING")).ok).toBe(false);
     expect((await setOrderStatus(cancelled.id, "COMPLETED")).ok).toBe(false);
+    // 매트릭스 밖 상태(CANCELLED/PENDING_PAYMENT)로의 전이 차단 —
+    // 환불·감사 없이 취소/다운그레이드되는 우회 방지 (from-필터 무시 버그)
+    asAdmin(admin);
+    const o3 = await mk("PAID");
+    expect((await setOrderStatus(o3.id, "CANCELLED" as never)).ok).toBe(false);
+    expect((await setOrderStatus(o3.id, "PENDING_PAYMENT" as never)).ok).toBe(false);
+    expect((await prisma.order.findUnique({ where: { id: o3.id } }))?.status).toBe("PAID"); // 그대로
     // 일반 유저 권한 거절
     const o2 = await mk("PAID");
     asUser(u);
@@ -340,6 +347,16 @@ describe("관리자 — 잔액조정/문의답변/상품삭제", () => {
     const after = await prisma.inquiry.findUnique({ where: { id: q.id } });
     expect(after?.status).toBe("ANSWERED");
     expect(await prisma.notification.count({ where: { userId: u.id, type: "inquiry" } })).toBe(1);
+  });
+
+  it("입력 길이 상한: 거대한 본문은 거부(DoS 방지)", async () => {
+    const u = await makeUser();
+    asUser(u);
+    const huge = "가".repeat(30_000);
+    expect((await createInquiry({ title: "제목", content: huge })).ok).toBe(false);
+    expect((await createInquiry({ title: huge, content: "내용" })).ok).toBe(false);
+    // 정상 길이는 통과
+    expect((await createInquiry({ title: "제목", content: "정상 내용" })).ok).toBe(true);
   });
 
   it("상품 삭제: 주문 이력 있으면 안내 메시지로 거절, 없으면 삭제", async () => {

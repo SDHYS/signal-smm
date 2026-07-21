@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type Result = { ok: boolean; error?: string; data?: string };
 
@@ -21,6 +22,8 @@ export async function updateProfile(input: {
   const name = input.name?.trim();
   const email = input.email?.trim().toLowerCase();
   if (!name) return { ok: false, error: "이름을 입력해주세요." };
+  if (overLen(name, LIMITS.shortText) || overLen(input.phone, LIMITS.phone) || overLen(email, LIMITS.email))
+    return { ok: false, error: "입력이 너무 깁니다." };
   if (!emailRe.test(email))
     return { ok: false, error: "이메일 형식이 올바르지 않습니다." };
 
@@ -31,10 +34,17 @@ export async function updateProfile(input: {
   });
   if (dup) return { ok: false, error: "이미 사용 중인 이메일입니다." };
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { name, email, phone: input.phone?.trim() || null },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { name, email, phone: input.phone?.trim() || null },
+    });
+  } catch (e) {
+    // 동시 요청으로 같은 이메일이 먼저 저장된 경우(P2002) → 친절한 메시지(500 방지)
+    if ((e as { code?: string })?.code === "P2002")
+      return { ok: false, error: "이미 사용 중인 이메일입니다." };
+    throw e;
+  }
 
   revalidatePath("/mypage");
   revalidatePath("/", "layout");
@@ -49,6 +59,8 @@ export async function changePassword(input: {
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
   if (!input.next || input.next.length < 8)
     return { ok: false, error: "새 비밀번호는 8자 이상이어야 합니다." };
+  if (input.next.length > LIMITS.password)
+    return { ok: false, error: `비밀번호는 ${LIMITS.password}자 이하로 입력해주세요.` };
 
   const row = await prisma.user.findUnique({
     where: { id: user.id },

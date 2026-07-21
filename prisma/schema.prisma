@@ -61,7 +61,7 @@ model ChargeRequest {
   updatedAt     DateTime     @updatedAt
 
   @@index([userId, createdAt])
-  @@index([status])
+  @@index([status, createdAt])
   @@map("charge_requests")
 }
 
@@ -146,6 +146,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([providerOrderId])
+  @@index([sentAt]) // 발주실패/고아 필터(failedDispatchFilter)의 items.some 서브쿼리용
   @@map("order_items")
 }
 
@@ -211,7 +212,7 @@ model Inquiry {
   updatedAt    DateTime      @updatedAt
 
   @@index([userId])
-  @@index([status])
+  @@index([status, createdAt])
   @@map("inquiries")
 }
 

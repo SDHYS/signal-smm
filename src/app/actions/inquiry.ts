@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type Result = { ok: boolean; error?: string; id?: string };
 
@@ -19,6 +20,8 @@ export async function createInquiry(input: {
     return { ok: false, error: RATE_LIMITED_MSG };
   if (!input.title.trim() || !input.content.trim())
     return { ok: false, error: "제목과 내용을 입력해주세요." };
+  if (overLen(input.title, LIMITS.title) || overLen(input.content, LIMITS.content))
+    return { ok: false, error: "입력이 너무 깁니다." };
 
   const q = await prisma.inquiry.create({
     data: {
@@ -38,6 +41,7 @@ export async function answerInquiry(id: string, answer: string): Promise<Result>
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
   if (!answer.trim()) return { ok: false, error: "답변 내용을 입력해주세요." };
+  if (overLen(answer, LIMITS.content)) return { ok: false, error: "답변이 너무 깁니다." };
 
   const updated = await prisma.inquiry.update({
     where: { id },

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type Result = { ok: boolean; error?: string; id?: string };
 
@@ -21,6 +22,8 @@ export async function createNotice(input: {
   if (!admin) return { ok: false, error: "권한이 없습니다." };
   if (!input.title.trim() || !input.content.trim())
     return { ok: false, error: "제목과 내용을 입력해주세요." };
+  if (overLen(input.title, LIMITS.title) || overLen(input.content, LIMITS.content))
+    return { ok: false, error: "입력이 너무 깁니다." };
 
   const n = await prisma.notice.create({
     data: {

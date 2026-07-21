@@ -21,10 +21,11 @@ export default async function AdminMembersPage({
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 200,
       include: { _count: { select: { orders: true } } },
     }),
-    prisma.user.count(),
+    // 검색 시 total이 전체 회원수가 아니라 '검색 결과 수'와 일치하도록 동일 where 적용
+    prisma.user.count({ where }),
   ]);
 
   const members: MemberRow[] = rows.map((u) => ({
