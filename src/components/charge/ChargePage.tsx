@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createChargeRequest, cancelMyCharge } from "@/app/actions/charge";
@@ -93,6 +93,9 @@ export default function ChargePage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ total: number; depositor: string } | null>(null);
+  // 리렌더 전 따닥 차단 + 서버 멱등성 키 (한 번의 신청은 한 건만)
+  const inFlightRef = useRef(false);
+  const chargeKeyRef = useRef<string | null>(null);
 
   const vat = Math.round((amount * vatRate) / 100);
   const total = amount + vat;
@@ -126,21 +129,31 @@ export default function ChargePage({
           ? { 휴대폰번호: cashReceiptNo }
           : undefined;
 
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    if (!chargeKeyRef.current) chargeKeyRef.current = crypto.randomUUID();
+
     setLoading(true);
-    const res = await createChargeRequest({
-      amount,
-      depositorName: depositor,
-      receiptType: receiptOptions[receipt],
-      receiptDetail,
-    });
-    setLoading(false);
-    if (res.ok) {
-      setDone({ total, depositor: depositor.trim() });
-      setAmount(0);
-      setDepositor("");
-      router.refresh();
-    } else {
-      setError(res.error ?? "충전 신청에 실패했습니다.");
+    try {
+      const res = await createChargeRequest({
+        amount,
+        depositorName: depositor,
+        receiptType: receiptOptions[receipt],
+        receiptDetail,
+        clientKey: chargeKeyRef.current,
+      });
+      if (res.ok) {
+        chargeKeyRef.current = null; // 성공 → 다음 신청은 새 키
+        setDone({ total, depositor: depositor.trim() });
+        setAmount(0);
+        setDepositor("");
+        router.refresh();
+      } else {
+        setError(res.error ?? "충전 신청에 실패했습니다.");
+      }
+    } finally {
+      inFlightRef.current = false;
+      setLoading(false);
     }
   }
 

@@ -45,6 +45,7 @@ enum ChargeStatus {
 
 model ChargeRequest {
   id            String       @id @default(cuid())
+  clientKey     String?      @unique // 클라이언트 생성 멱등성 키 (따닥/중복 제출 방지)
   userId        String
   user          User         @relation(fields: [userId], references: [id])
   amount        Int // 충전 금액(원) — 확인 시 balance 에 가산

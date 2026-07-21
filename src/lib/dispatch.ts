@@ -104,9 +104,16 @@ export async function forceRedispatchItem(itemId: string): Promise<DispatchResul
   if (item.order.status !== "PAID" && item.order.status !== "PROCESSING")
     return { ok: false, error: "발주 가능한 상태의 주문이 아닙니다." };
 
-  // sentAt 재선점(providerError가 있는 실패건만) — 이미 정상 발주중인 건은 건드리지 않음
+  // sentAt 재선점 — 이미 정상 발주중(in-flight)인 건은 절대 건드리지 않는다.
+  // in-flight = sentAt 있음 + providerError 없음 + providerOrderId 없음 (addOrder 호출 대기 중).
+  // 이 창에서 재선점하면 addOrder가 두 번 호출돼 도매 이중과금 + 고아 주문이 생긴다.
+  // 따라서 실패건(providerError 있음)이거나 아직 미시도(sentAt 없음)만 재발주 허용.
   const claim = await prisma.orderItem.updateMany({
-    where: { id: itemId, providerOrderId: null },
+    where: {
+      id: itemId,
+      providerOrderId: null,
+      OR: [{ providerError: { not: null } }, { sentAt: null }],
+    },
     data: { sentAt: new Date(), providerError: null },
   });
   if (claim.count === 0) return { ok: true, skipped: true };

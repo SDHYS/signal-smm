@@ -17,12 +17,26 @@ export async function createChargeRequest(input: {
   depositorName: string;
   receiptType?: string;
   receiptDetail?: Record<string, string>;
+  clientKey?: string;
 }): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "로그인이 필요합니다." };
 
   if (!(await rateLimit("charge", { max: 5, windowMs: 60_000, key: user.id })))
     return { ok: false, error: RATE_LIMITED_MSG };
+
+  // 멱등성: 같은 clientKey면 이미 만든 신청을 그대로 반환 (따닥/재제출 시 이중 신청 방지)
+  const clientKey = input.clientKey?.trim() || null;
+  if (clientKey) {
+    const dup = await prisma.chargeRequest.findUnique({
+      where: { clientKey },
+      select: { id: true, userId: true },
+    });
+    if (dup) {
+      if (dup.userId !== user.id) return { ok: false, error: "잘못된 요청입니다." };
+      return { ok: true, id: dup.id };
+    }
+  }
 
   const amount = Math.floor(input.amount);
   if (!Number.isSafeInteger(amount) || amount <= 0)
@@ -46,18 +60,33 @@ export async function createChargeRequest(input: {
   const receiptDetail =
     detailEntries.length > 0 ? JSON.stringify(Object.fromEntries(detailEntries)) : null;
 
-  const cr = await prisma.chargeRequest.create({
-    data: {
-      userId: user.id,
-      amount,
-      vat,
-      total,
-      depositorName,
-      receiptType: input.receiptType || "신청안함",
-      receiptDetail,
-    },
-    select: { id: true },
-  });
+  let cr: { id: string };
+  try {
+    cr = await prisma.chargeRequest.create({
+      data: {
+        clientKey,
+        userId: user.id,
+        amount,
+        vat,
+        total,
+        depositorName,
+        receiptType: input.receiptType || "신청안함",
+        receiptDetail,
+      },
+      select: { id: true },
+    });
+  } catch (e) {
+    // 동시 제출로 같은 clientKey가 먼저 커밋된 경우(P2002) → 기존 신청 반환
+    if ((e as { code?: string })?.code === "P2002" && clientKey) {
+      const dup = await prisma.chargeRequest.findUnique({
+        where: { clientKey },
+        select: { id: true, userId: true },
+      });
+      if (dup?.userId === user.id) return { ok: true, id: dup.id };
+    }
+    console.error("createChargeRequest failed", e);
+    return { ok: false, error: "충전 신청 처리 중 오류가 발생했습니다." };
+  }
 
   revalidatePath("/charge");
   return { ok: true, id: cr.id };
@@ -158,11 +187,19 @@ export async function confirmChargesBulk(
     return { ok: false, confirmed: 0, failed: 0, error: "권한이 없습니다." };
   if (!Array.isArray(ids) || ids.length === 0)
     return { ok: false, confirmed: 0, failed: 0, error: "선택된 신청이 없습니다." };
+  // 조용한 잘림 방지 — 초과 선택은 거부해서 미처리분이 '처리됨'으로 오인되지 않게
+  if (ids.length > 200)
+    return {
+      ok: false,
+      confirmed: 0,
+      failed: 0,
+      error: "한 번에 최대 200건까지 처리할 수 있습니다. 나눠서 진행해주세요.",
+    };
 
   let confirmed = 0;
   let failed = 0;
   // 각 건을 독립 처리 — 한 건 실패가 나머지를 막지 않도록 순차 처리(원자성은 confirmCharge 내부 보장)
-  for (const id of ids.slice(0, 200)) {
+  for (const id of ids) {
     const res = await confirmCharge(id);
     if (res.ok) confirmed++;
     else failed++;

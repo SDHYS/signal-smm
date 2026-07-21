@@ -208,8 +208,10 @@ export async function setOrderStatus(
   // 도매 발주된 주문의 수동 '완료'는 금지 — 도매가 Partial로 끝나면 자동 잔여환불이
   // 무효화되어 고객이 손해본다. 도매 연동 주문은 상태 동기화가 완료/환불을 결정한다.
   if (status === "COMPLETED") {
+    // sentAt 기준(providerOrderId 아님) — 발주 시도는 sentAt을 addOrder 전에 찍으므로
+    // in-flight(주문번호 아직 없음) 건도 포착해 수동완료로 인한 부분환불 유실을 막는다.
     const dispatched = await prisma.orderItem.count({
-      where: { orderId: id, providerOrderId: { not: null } },
+      where: { orderId: id, sentAt: { not: null } },
     });
     if (dispatched > 0)
       return {

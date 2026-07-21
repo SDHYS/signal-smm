@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { prisma } from "./prisma";
 
@@ -16,7 +17,10 @@ export async function rateLimit(
   scope: string,
   opts: { max: number; windowMs: number; key?: string },
 ): Promise<boolean> {
-  const key = opts.key ?? (await clientIp());
+  const rawKey = opts.key ?? (await clientIp());
+  // 키 길이 상한 — 공격자 제어 키(예: username)가 btree 인덱스 최대치를 넘겨 INSERT를
+  // 실패시키면 아래 catch가 fail-open 되어 리미터가 우회된다. 긴 키는 해시로 고정 길이화.
+  const key = rawKey.length > 128 ? createHash("sha256").update(rawKey).digest("hex") : rawKey;
   const id = `${scope}:${key}`;
   const windowMs = Math.max(1, Math.floor(opts.windowMs));
 

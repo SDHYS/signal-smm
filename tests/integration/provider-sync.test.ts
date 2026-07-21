@@ -212,6 +212,25 @@ describe("발주 (dispatchOrderItem)", () => {
     await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
   });
 
+  it("in-flight(sentAt 있고 에러·주문번호 없음) 아이템은 forceRedispatch가 재선점 안 함 → 이중과금 방지", async () => {
+    const u = await makeUser();
+    const p = await makeProduct(4189);
+    const o = await makeOrder({ userId: u.id, productId: p.id, quantity: 10 });
+    // 자동발주 addOrder 대기 중 상태 모사: sentAt 찍힘, 주문번호·에러 없음
+    await prisma.orderItem.update({
+      where: { id: o.items[0].id },
+      data: { sentAt: new Date(), providerOrderId: null, providerError: null },
+    });
+    stubSmm(() => ({ order: 88888 }));
+    const before = fetchCalls.length;
+    const r = await forceRedispatchItem(o.items[0].id);
+    expect(r.skipped).toBe(true); // 재선점 거부
+    expect(fetchCalls.length).toBe(before); // addOrder 재호출 없음
+    const item = await prisma.orderItem.findUnique({ where: { id: o.items[0].id } });
+    expect(item?.providerOrderId).toBeNull(); // 그대로 in-flight 유지
+    await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
+  });
+
   it("환불(CANCELLED)된 주문 → 발주 거부, 도매 호출 없음", async () => {
     const u = await makeUser();
     const p = await makeProduct(4189);
