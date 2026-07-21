@@ -71,6 +71,7 @@ function Row({ m }: { m: MemberRow }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
           placeholder="금액"
+          aria-label="금액"
           className="w-28 rounded border border-line px-3 py-2 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <button
@@ -127,6 +128,7 @@ export default function AdminMembers({
           name="q"
           defaultValue={q ?? ""}
           placeholder="아이디 / 이름 / 이메일 검색"
+          aria-label="아이디 / 이름 / 이메일 검색"
           className="w-72 rounded-lg border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <button className="rounded-lg bg-navy px-5 py-3 text-sm font-medium text-white">

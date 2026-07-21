@@ -42,12 +42,14 @@ export default function AdminNotices({ notices }: { notices: NoticeItem[] }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목"
+          aria-label="제목"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="내용"
+          aria-label="내용"
           rows={5}
           className="w-full resize-y rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />

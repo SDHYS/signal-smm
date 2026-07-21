@@ -69,6 +69,7 @@ export default function MemberActions({
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="금액"
+            aria-label="금액"
             className="w-32 rounded border border-line px-3 py-2 text-sm text-navy focus:border-blue focus:outline-none"
           />
           <button
@@ -119,6 +120,7 @@ export default function MemberActions({
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           placeholder="회원에게 보낼 쪽지 (알림으로 전달)"
+          aria-label="회원에게 보낼 쪽지 (알림으로 전달)"
           rows={2}
           className="w-full resize-y rounded border border-line px-3 py-2 text-sm text-navy focus:border-blue focus:outline-none"
         />

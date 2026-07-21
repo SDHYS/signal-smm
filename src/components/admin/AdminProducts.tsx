@@ -240,6 +240,7 @@ function ProviderPanel({
                 value={svcId}
                 onChange={(e) => setSvcId(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="서비스 ID"
+                aria-label="서비스 ID"
                 className="w-28 rounded border border-line bg-white px-3 py-1.5 text-xs text-navy focus:border-blue focus:outline-none"
               />
               <button
@@ -296,6 +297,7 @@ function ServiceSearch({
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="예: 한국인 팔로워 / youtube views / 4193"
+        aria-label="예: 한국인 팔로워 / youtube views / 4193"
         className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
       />
       {q.trim() && (
@@ -459,24 +461,28 @@ export default function AdminProducts({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="상품명 (예: 인스타그램 한국인 팔로워)"
+            aria-label="상품명 (예: 인스타그램 한국인 팔로워)"
             className="flex-1 rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
           />
           <input
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="단가(원)"
+            aria-label="단가(원)"
             className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none sm:w-32"
           />
           <input
             value={minQty}
             onChange={(e) => setMinQty(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="최소수량"
+            aria-label="최소수량"
             className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none sm:w-28"
           />
           <input
             value={maxQty}
             onChange={(e) => setMaxQty(e.target.value.replace(/[^0-9]/g, ""))}
             placeholder="최대수량"
+            aria-label="최대수량"
             className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none sm:w-28"
           />
         </div>
@@ -484,6 +490,7 @@ export default function AdminProducts({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="상품 설명 (선택)"
+          aria-label="상품 설명 (선택)"
           rows={2}
           className="w-full resize-y rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />

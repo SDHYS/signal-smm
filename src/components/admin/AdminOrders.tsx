@@ -181,6 +181,7 @@ function Row({ o }: { o: AdminOrder }) {
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           placeholder="관리자 메모 (고객에게 노출되지 않음)"
+          aria-label="관리자 메모 (고객에게 노출되지 않음)"
           className="flex-1 rounded border border-line px-3 py-2 text-xs text-navy focus:border-blue focus:outline-none"
         />
         <button
@@ -290,6 +291,7 @@ export default function AdminOrders({
           name="q"
           defaultValue={query}
           placeholder="주문번호 / 아이디 / 이름 / 상품명 검색"
+          aria-label="주문번호 / 아이디 / 이름 / 상품명 검색"
           className="w-80 max-w-full rounded-lg border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <button className="rounded-lg bg-navy px-5 py-3 text-sm font-medium text-white">검색</button>

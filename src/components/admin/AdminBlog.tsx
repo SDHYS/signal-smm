@@ -65,12 +65,14 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목"
+          aria-label="제목"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="내용"
+          aria-label="내용"
           rows={6}
           className="w-full resize-y rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
@@ -78,12 +80,14 @@ export default function AdminBlog({ posts }: { posts: BlogItem[] }) {
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="태그 (쉼표로 구분, 예: 유튜브, 조회수)"
+          aria-label="태그 (쉼표로 구분, 예: 유튜브, 조회수)"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <input
           value={thumbnailUrl}
           onChange={(e) => setThumbnailUrl(e.target.value)}
           placeholder="썸네일 이미지 URL (선택)"
+          aria-label="썸네일 이미지 URL (선택)"
           className="w-full rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <div className="flex items-center justify-end gap-3">

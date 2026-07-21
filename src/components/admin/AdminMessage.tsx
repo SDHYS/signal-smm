@@ -32,12 +32,14 @@ export default function AdminMessage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="받는 회원 아이디"
+          aria-label="받는 회원 아이디"
           className="rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none sm:w-52"
         />
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="쪽지 내용"
+          aria-label="쪽지 내용"
           className="flex-1 rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
         />
         <button

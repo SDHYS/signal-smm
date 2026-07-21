@@ -68,6 +68,7 @@ function Item({ q }: { q: AdminInquiry }) {
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
         placeholder="답변 입력"
+        aria-label="답변 입력"
         rows={3}
         className="w-full resize-y rounded border border-line px-4 py-3 text-sm text-navy focus:border-blue focus:outline-none"
       />
