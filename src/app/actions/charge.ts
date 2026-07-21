@@ -8,7 +8,7 @@ import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { getVatRate } from "@/lib/settings";
 import { logAdmin } from "@/lib/audit";
 
-export type ActionResult = { ok: boolean; error?: string; id?: string };
+export type ActionResult = { ok: boolean; error?: string; id?: string; total?: number };
 
 const MAX_CHARGE = 10_000_000; // 1회 최대 충전 금액
 
@@ -30,11 +30,11 @@ export async function createChargeRequest(input: {
   if (clientKey) {
     const dup = await prisma.chargeRequest.findUnique({
       where: { clientKey },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, total: true },
     });
     if (dup) {
       if (dup.userId !== user.id) return { ok: false, error: "잘못된 요청입니다." };
-      return { ok: true, id: dup.id };
+      return { ok: true, id: dup.id, total: dup.total };
     }
   }
 
@@ -89,7 +89,8 @@ export async function createChargeRequest(input: {
   }
 
   revalidatePath("/charge");
-  return { ok: true, id: cr.id };
+  // total 을 서버 진실값으로 반환 — 유저가 세션 중 부가세율 변경돼도 표시=저장 금액 일치
+  return { ok: true, id: cr.id, total };
 }
 
 // ── 사용자: 본인 입금대기 신청 취소 ───────────────────

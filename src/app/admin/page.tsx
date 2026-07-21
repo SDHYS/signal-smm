@@ -4,6 +4,7 @@ import AdminMessage from "@/components/admin/AdminMessage";
 import DashboardStats, { type Stat } from "@/components/admin/DashboardStats";
 import RevenueChart, { type DayRevenue } from "@/components/admin/RevenueChart";
 import { getBalance, smmConfigured } from "@/lib/smm";
+import { failedDispatchFilter } from "@/lib/order-filters";
 
 // 도매 잔액·발주실패 조회를 위해 요청 시 렌더 고정 (빌드 중 외부 API 호출 방지)
 export const dynamic = "force-dynamic";
@@ -62,13 +63,8 @@ export default async function AdminPage() {
       },
       select: { createdAt: true, totalAmount: true },
     }),
-    // 발주실패 주문 건수 (도매 미발주 + 에러)
-    prisma.order.count({
-      where: {
-        status: { in: ["PAID", "PROCESSING"] },
-        items: { some: { providerError: { not: null }, providerOrderId: null } },
-      },
-    }),
+    // 발주실패/멈춤 주문 건수 (에러 있거나 오래 미완료 = 고아 포함)
+    prisma.order.count({ where: failedDispatchFilter() }),
   ]);
 
   // 도매 잔액 (외부 API — 실패해도 대시보드는 떠야 하므로 격리)

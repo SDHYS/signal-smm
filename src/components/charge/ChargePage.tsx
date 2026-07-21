@@ -144,7 +144,8 @@ export default function ChargePage({
       });
       if (res.ok) {
         chargeKeyRef.current = null; // 성공 → 다음 신청은 새 키
-        setDone({ total, depositor: depositor.trim() });
+        // 서버가 저장한 total 을 표시(부가세율 변경 레이스 시에도 표시=저장 일치)
+        setDone({ total: res.total ?? total, depositor: depositor.trim() });
         setAmount(0);
         setDepositor("");
         router.refresh();

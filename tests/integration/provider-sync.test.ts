@@ -20,6 +20,7 @@ vi.mock("@/lib/auth", () => ({
 import { dispatchOrderItem, forceRedispatchItem } from "@/lib/dispatch";
 import { syncProviderOrders } from "@/lib/sync-orders";
 import { refundOrder, createOrder } from "@/app/actions/order";
+import { failedDispatchFilter } from "@/lib/order-filters";
 
 const PREFIX = `qp_${Date.now().toString(36)}`;
 const userIds: string[] = [];
@@ -210,6 +211,33 @@ describe("발주 (dispatchOrderItem)", () => {
     expect(item?.providerOrderId).toBe("90909");
     expect(item?.providerError).toBeNull();
     await prisma.order.update({ where: { id: o.id }, data: { status: "COMPLETED" } });
+  });
+
+  it("발주실패 필터: 조용한 고아(오래된 sentAt·에러 없음) 포착, fresh in-flight는 제외", async () => {
+    const u = await makeUser();
+    const p = await makeProduct(4189);
+    const now = Date.now();
+    const set = (id: string, data: Record<string, unknown>) =>
+      prisma.orderItem.updateMany({ where: { orderId: id }, data });
+
+    // 고아: sentAt 10분 전, 주문번호·에러 없음 (providerError 기록마저 실패한 케이스)
+    const orphan = await makeOrder({ userId: u.id, productId: p.id, quantity: 10 });
+    await set(orphan.id, { sentAt: new Date(now - 10 * 60_000), providerOrderId: null, providerError: null });
+    // fresh in-flight: 방금 sentAt, 에러 없음 → 필터에 안 걸려야(오탐 방지)
+    const inflight = await makeOrder({ userId: u.id, productId: p.id, quantity: 10 });
+    await set(inflight.id, { sentAt: new Date(now), providerOrderId: null, providerError: null });
+    // 정상 발주됨: 주문번호 있음 → 제외
+    const ok = await makeOrder({ userId: u.id, productId: p.id, quantity: 10, providerOrderId: "55001" });
+
+    const flagged = await prisma.order.findMany({
+      where: { AND: [failedDispatchFilter(now), { userId: u.id }] },
+      select: { id: true },
+    });
+    const ids = flagged.map((o) => o.id);
+    expect(ids).toContain(orphan.id); // 고아 포착
+    expect(ids).not.toContain(inflight.id); // fresh in-flight 제외
+    expect(ids).not.toContain(ok.id); // 정상 발주 제외
+    await prisma.order.updateMany({ where: { userId: u.id }, data: { status: "COMPLETED" } });
   });
 
   it("in-flight(sentAt 있고 에러·주문번호 없음) 아이템은 forceRedispatch가 재선점 안 함 → 이중과금 방지", async () => {

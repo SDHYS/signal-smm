@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import AdminOrders, { type AdminOrder } from "@/components/admin/AdminOrders";
+import { failedDispatchFilter } from "@/lib/order-filters";
 
 const STATUSES = ["PENDING_PAYMENT", "PAID", "PROCESSING", "COMPLETED", "CANCELLED"] as const;
 const PAGE_SIZE = 50;
@@ -30,10 +31,7 @@ export default async function AdminOrdersPage({
       ]
     : undefined;
 
-  const failedFilter: Prisma.OrderWhereInput = {
-    status: { in: ["PAID", "PROCESSING"] },
-    items: { some: { providerError: { not: null }, providerOrderId: null } },
-  };
+  const failedFilter: Prisma.OrderWhereInput = failedDispatchFilter();
 
   const where: Prisma.OrderWhereInput = {
     ...(failedOnly ? failedFilter : activeStatus !== "ALL" ? { status: activeStatus as never } : {}),
