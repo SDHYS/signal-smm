@@ -216,9 +216,9 @@ export default function ChargesManager({
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-line bg-white">
-          <div className="min-w-[860px]">
-            <div className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
-              <div className="w-[44px]">
+          <div role="table" aria-label="충전 신청 목록" className="min-w-[860px]">
+            <div role="row" className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
+              <div role="columnheader" className="w-[44px]">
                 {pendingIds.length > 0 && (
                   <input
                     type="checkbox"
@@ -229,18 +229,18 @@ export default function ChargesManager({
                   />
                 )}
               </div>
-              <div className="w-[200px]">회원</div>
-              <div className="flex-1">입금자명 · 신청일</div>
-              <div className="w-[110px] text-right">충전금액</div>
-              <div className="w-[120px] text-right">입금액</div>
-              <div className="w-[90px] text-center">상태</div>
-              <div className="w-[200px]" />
+              <div role="columnheader" className="w-[200px]">회원</div>
+              <div role="columnheader" className="flex-1">입금자명 · 신청일</div>
+              <div role="columnheader" className="w-[110px] text-right">충전금액</div>
+              <div role="columnheader" className="w-[120px] text-right">입금액</div>
+              <div role="columnheader" className="w-[90px] text-center">상태</div>
+              <div role="columnheader" className="w-[200px]" />
             </div>
             {charges.map((c) => {
               const isPending = c.status === "PENDING";
               return (
-                <div key={c.id} className="flex items-center border-t border-line px-6 py-4 text-sm">
-                  <div className="w-[44px]">
+                <div role="row" key={c.id} className="flex items-center border-t border-line px-6 py-4 text-sm">
+                  <div role="cell" className="w-[44px]">
                     {isPending && (
                       <input
                         type="checkbox"
@@ -251,24 +251,24 @@ export default function ChargesManager({
                       />
                     )}
                   </div>
-                  <div className="flex w-[200px] flex-col">
+                  <div role="cell" className="flex w-[200px] flex-col">
                     <span className="font-medium text-navy">{c.name}</span>
                     <span className="text-gray">@{c.username}</span>
                   </div>
-                  <div className="flex flex-1 flex-col">
+                  <div role="cell" className="flex flex-1 flex-col">
                     <span className="font-medium text-navy">{c.depositorName}</span>
                     <span className="text-gray">
                       {c.receiptType} · {fmtKST(c.createdAt)}
                     </span>
                   </div>
-                  <div className="w-[110px] text-right font-medium text-navy">{won(c.amount)}</div>
-                  <div className="w-[120px] text-right font-semibold text-orange">{won(c.total)}</div>
-                  <div className="w-[90px] text-center">
+                  <div role="cell" className="w-[110px] text-right font-medium text-navy">{won(c.amount)}</div>
+                  <div role="cell" className="w-[120px] text-right font-semibold text-orange">{won(c.total)}</div>
+                  <div role="cell" className="w-[90px] text-center">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusMeta[c.status].cls}`}>
                       {statusMeta[c.status].label}
                     </span>
                   </div>
-                  <div className="flex w-[200px] items-center justify-end gap-2">
+                  <div role="cell" className="flex w-[200px] items-center justify-end gap-2">
                     {isPending ? (
                       <>
                         <button

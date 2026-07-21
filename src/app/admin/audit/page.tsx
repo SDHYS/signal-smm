@@ -94,31 +94,31 @@ export default async function AdminAuditPage({
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-line bg-white">
-          <div className="min-w-[820px]">
-            <div className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
-              <div className="w-[150px]">시각</div>
-              <div className="w-[130px]">실행자</div>
-              <div className="w-[130px]">조치</div>
-              <div className="w-[130px]">대상</div>
-              <div className="w-[110px] text-right">금액</div>
-              <div className="flex-1">사유 / 상세</div>
+          <div role="table" aria-label="감사 로그" className="min-w-[820px]">
+            <div role="row" className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
+              <div role="columnheader" className="w-[150px]">시각</div>
+              <div role="columnheader" className="w-[130px]">실행자</div>
+              <div role="columnheader" className="w-[130px]">조치</div>
+              <div role="columnheader" className="w-[130px]">대상</div>
+              <div role="columnheader" className="w-[110px] text-right">금액</div>
+              <div role="columnheader" className="flex-1">사유 / 상세</div>
             </div>
             {rows.map((r) => {
               const meta = ACTION_LABEL[r.action] ?? { text: r.action, cls: "bg-soft text-gray" };
               return (
-                <div key={r.id} className="flex items-start border-t border-line px-6 py-3.5 text-sm">
-                  <div className="w-[150px] text-gray">{fmtKST(r.createdAt)}</div>
-                  <div className="w-[130px] font-medium text-navy">{r.adminName}</div>
-                  <div className="w-[130px]">
+                <div role="row" key={r.id} className="flex items-start border-t border-line px-6 py-3.5 text-sm">
+                  <div role="cell" className="w-[150px] text-gray">{fmtKST(r.createdAt)}</div>
+                  <div role="cell" className="w-[130px] font-medium text-navy">{r.adminName}</div>
+                  <div role="cell" className="w-[130px]">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${meta.cls}`}>
                       {meta.text}
                     </span>
                   </div>
-                  <div className="w-[130px] text-navy">{r.targetLabel ?? r.targetType}</div>
-                  <div className="w-[110px] text-right font-medium text-navy">
+                  <div role="cell" className="w-[130px] text-navy">{r.targetLabel ?? r.targetType}</div>
+                  <div role="cell" className="w-[110px] text-right font-medium text-navy">
                     {r.amount != null ? won(r.amount) : "—"}
                   </div>
-                  <div className="flex-1 whitespace-pre-wrap break-words text-gray">
+                  <div role="cell" className="flex-1 whitespace-pre-wrap break-words text-gray">
                     {r.reason ?? (r.meta ? formatMeta(r.meta) : "—")}
                   </div>
                 </div>

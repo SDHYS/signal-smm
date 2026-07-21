@@ -85,21 +85,21 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
     <div className="flex flex-col gap-3">
       {error && <p className="text-sm font-medium text-[#ED1C24]">{error}</p>}
       <div className="overflow-x-auto rounded-xl border border-line bg-white">
-        <div className="min-w-[720px]">
-        <div className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
-          <div className="w-[200px]">회원</div>
-          <div className="flex-1">입금자명</div>
-          <div className="w-[120px] text-right">충전금액</div>
-          <div className="w-[140px] text-right">입금액</div>
-          <div className="w-[180px]" />
+        <div role="table" aria-label="입금 대기 충전 신청" className="min-w-[720px]">
+        <div role="row" className="flex items-center bg-soft px-6 py-4 text-sm font-medium text-gray">
+          <div role="columnheader" className="w-[200px]">회원</div>
+          <div role="columnheader" className="flex-1">입금자명</div>
+          <div role="columnheader" className="w-[120px] text-right">충전금액</div>
+          <div role="columnheader" className="w-[140px] text-right">입금액</div>
+          <div role="columnheader" className="w-[180px]" />
         </div>
         {charges.map((c) => (
-          <div key={c.id} className="flex items-center border-t border-line px-6 py-4 text-sm">
-            <div className="flex w-[200px] flex-col">
+          <div role="row" key={c.id} className="flex items-center border-t border-line px-6 py-4 text-sm">
+            <div role="cell" className="flex w-[200px] flex-col">
               <span className="font-medium text-navy">{c.name}</span>
               <span className="text-gray">@{c.username}</span>
             </div>
-            <div className="flex flex-1 flex-col">
+            <div role="cell" className="flex flex-1 flex-col">
               <span className="font-medium text-navy">{c.depositorName}</span>
               <span className="text-gray">
                 {c.receiptType} · {fmtKST(c.createdAt)}
@@ -108,9 +108,9 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
                 <span className="text-xs text-gray">{formatDetail(c.receiptDetail)}</span>
               )}
             </div>
-            <div className="w-[120px] text-right font-medium text-navy">{won(c.amount)}</div>
-            <div className="w-[140px] text-right font-semibold text-orange">{won(c.total)}</div>
-            <div className="flex w-[180px] items-center justify-end gap-2">
+            <div role="cell" className="w-[120px] text-right font-medium text-navy">{won(c.amount)}</div>
+            <div role="cell" className="w-[140px] text-right font-semibold text-orange">{won(c.total)}</div>
+            <div role="cell" className="flex w-[180px] items-center justify-end gap-2">
               <button
                 onClick={() => run(c.id, cancelCharge)}
                 disabled={busy === c.id}
