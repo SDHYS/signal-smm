@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtKST, fmtKSTDate } from "@/lib/datetime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -257,7 +258,7 @@ export default function ChargesManager({
                   <div className="flex flex-1 flex-col">
                     <span className="font-medium text-navy">{c.depositorName}</span>
                     <span className="text-gray">
-                      {c.receiptType} · {new Date(c.createdAt).toLocaleString("ko-KR")}
+                      {c.receiptType} · {fmtKST(c.createdAt)}
                     </span>
                   </div>
                   <div className="w-[110px] text-right font-medium text-navy">{won(c.amount)}</div>
@@ -295,7 +296,7 @@ export default function ChargesManager({
                       </>
                     ) : (
                       <span className="text-xs text-gray">
-                        {c.confirmedAt ? new Date(c.confirmedAt).toLocaleDateString("ko-KR") : "—"}
+                        {c.confirmedAt ? fmtKSTDate(c.confirmedAt) : "—"}
                       </span>
                     )}
                   </div>

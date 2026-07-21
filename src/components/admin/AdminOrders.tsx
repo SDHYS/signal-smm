@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtKST } from "@/lib/datetime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { setOrderStatus, refundOrder, setOrderMemo, redispatchOrder, syncOrdersAction } from "@/app/actions/order";
@@ -96,7 +97,7 @@ function Row({ o }: { o: AdminOrder }) {
           <span className="text-sm text-gray">
             {o.userName} (@{o.username}) · #{o.orderNo} ·{" "}
             <span className="font-medium text-navy">{won(o.total)}</span> ·{" "}
-            {new Date(o.createdAt).toLocaleString("ko-KR")}
+            {fmtKST(o.createdAt)}
           </span>
           {safeHref(o.targetUrl) && (
             <a

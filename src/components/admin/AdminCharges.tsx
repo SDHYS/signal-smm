@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtKST } from "@/lib/datetime";
 import { useRouter } from "next/navigation";
 import { confirmCharge, cancelCharge } from "@/app/actions/charge";
 
@@ -101,7 +102,7 @@ export default function AdminCharges({ charges }: { charges: PendingCharge[] }) 
             <div className="flex flex-1 flex-col">
               <span className="font-medium text-navy">{c.depositorName}</span>
               <span className="text-gray">
-                {c.receiptType} · {new Date(c.createdAt).toLocaleString("ko-KR")}
+                {c.receiptType} · {fmtKST(c.createdAt)}
               </span>
               {formatDetail(c.receiptDetail) && (
                 <span className="text-xs text-gray">{formatDetail(c.receiptDetail)}</span>

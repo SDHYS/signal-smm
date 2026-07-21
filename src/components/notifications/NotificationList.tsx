@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtKSTDate } from "@/lib/datetime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markNotificationRead, markAllNotificationsRead } from "@/app/actions/notification";
@@ -22,7 +23,7 @@ function timeAgo(iso: string) {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}일 전`;
-  return d.toLocaleDateString("ko-KR");
+  return fmtKSTDate(d);
 }
 
 export default function NotificationList({

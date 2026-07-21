@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { fmtKSTDate } from "@/lib/datetime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createChargeRequest, cancelMyCharge } from "@/app/actions/charge";
@@ -375,7 +376,7 @@ export default function ChargePage({
                         </span>
                         <span className="text-sm text-gray">
                           입금 {won(h.total)} · 입금자 {h.depositorName} ·{" "}
-                          {new Date(h.createdAt).toLocaleDateString("ko-KR")}
+                          {fmtKSTDate(h.createdAt)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
