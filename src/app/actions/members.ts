@@ -37,10 +37,11 @@ export async function adjustBalance(
     if (dec.count === 0)
       return { ok: false, error: "잔액이 부족해 차감할 수 없습니다." };
   } else {
-    await prisma.user.update({
+    const inc = await prisma.user.updateMany({
       where: { id: userId },
       data: { balance: { increment: amount } },
     });
+    if (inc.count === 0) return { ok: false, error: "회원을 찾을 수 없습니다." };
   }
 
   await notify(userId, {
@@ -73,10 +74,11 @@ export async function resetPassword(userId: string): Promise<Result> {
     () => chars[Math.floor(Math.random() * chars.length)],
   ).join("");
 
-  await prisma.user.update({
+  const upd = await prisma.user.updateMany({
     where: { id: userId },
     data: { passwordHash: await bcrypt.hash(temp, 10) },
   });
+  if (upd.count === 0) return { ok: false, error: "회원을 찾을 수 없습니다." };
 
   await notify(userId, {
     type: "message",

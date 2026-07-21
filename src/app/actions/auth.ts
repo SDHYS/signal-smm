@@ -52,16 +52,25 @@ export async function signupAction(input: SignupInput): Promise<ActionResult> {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      username,
-      email,
-      passwordHash,
-      name: username,
-      signupChannel: input.signupChannel?.slice(0, LIMITS.shortText) ?? null,
-    },
-    select: { id: true },
-  });
+  let user: { id: string };
+  try {
+    user = await prisma.user.create({
+      data: {
+        username,
+        email,
+        passwordHash,
+        name: username,
+        signupChannel: input.signupChannel?.slice(0, LIMITS.shortText) ?? null,
+      },
+      select: { id: true },
+    });
+  } catch (e) {
+    // 동시 가입으로 같은 아이디/이메일이 먼저 커밋된 경우(P2002) → 친절한 메시지(500 방지)
+    if ((e as { code?: string })?.code === "P2002")
+      return { ok: false, error: "이미 사용 중인 아이디 또는 이메일입니다." };
+    console.error("signupAction failed", e);
+    return { ok: false, error: "가입 처리 중 오류가 발생했습니다." };
+  }
 
   await createSession(user.id);
   return { ok: true };

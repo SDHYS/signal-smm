@@ -71,7 +71,7 @@ test.describe("관리자(로그인 세션)", () => {
 
   test("회원 상세 — 존재하지 않는 회원은 404 페이지", async ({ page }) => {
     await page.goto("/admin/members/no-such-member-id");
-    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.getByText("페이지를 찾을 수 없습니다")).toBeVisible();
     await expect(page.getByRole("heading", { name: "기본 정보" })).toHaveCount(0);
   });
 

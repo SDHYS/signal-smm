@@ -43,16 +43,24 @@ export async function answerInquiry(id: string, answer: string): Promise<Result>
   if (!answer.trim()) return { ok: false, error: "답변 내용을 입력해주세요." };
   if (overLen(answer, LIMITS.content)) return { ok: false, error: "답변이 너무 깁니다." };
 
-  const updated = await prisma.inquiry.update({
-    where: { id },
-    data: {
-      answer: answer.trim(),
-      status: "ANSWERED",
-      answeredById: admin.id,
-      answeredAt: new Date(),
-    },
-    select: { userId: true, title: true },
-  });
+  let updated: { userId: string; title: string };
+  try {
+    updated = await prisma.inquiry.update({
+      where: { id },
+      data: {
+        answer: answer.trim(),
+        status: "ANSWERED",
+        answeredById: admin.id,
+        answeredAt: new Date(),
+      },
+      select: { userId: true, title: true },
+    });
+  } catch (e) {
+    // 삭제된 문의에 답변 시도(P2025) → 500 대신 안내
+    if ((e as { code?: string })?.code === "P2025")
+      return { ok: false, error: "문의를 찾을 수 없습니다." };
+    throw e;
+  }
 
   await notify(updated.userId, {
     type: "inquiry",

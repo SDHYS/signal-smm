@@ -80,10 +80,11 @@ export async function updateProductPricing(
   if (!Number.isSafeInteger(minQty) || minQty < 1 || !Number.isSafeInteger(maxQty) || maxQty < minQty || maxQty > MAX_INT)
     return { ok: false, error: "수량 범위가 올바르지 않습니다." };
 
-  await prisma.product.update({
+  const upd = await prisma.product.updateMany({
     where: { id },
     data: { unitPrice, minQty, maxQty },
   });
+  if (upd.count === 0) return { ok: false, error: "상품을 찾을 수 없습니다." };
 
   revalidatePath("/");
   revalidatePath("/admin/products");
@@ -98,10 +99,11 @@ export async function setProviderService(
   if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
 
   if (serviceId === null) {
-    await prisma.product.update({
+    const cleared = await prisma.product.updateMany({
       where: { id: productId },
       data: { providerServiceId: null, providerRate: null, providerMeta: null },
     });
+    if (cleared.count === 0) return { ok: false, error: "상품을 찾을 수 없습니다." };
     revalidatePath("/admin/products");
     return { ok: true };
   }
@@ -121,7 +123,7 @@ export async function setProviderService(
   }
   if (!svc) return { ok: false, error: `도매에 없는 서비스 ID입니다: ${serviceId}` };
 
-  await prisma.product.update({
+  const mapped = await prisma.product.updateMany({
     where: { id: productId },
     data: {
       providerServiceId: serviceId,
@@ -138,6 +140,7 @@ export async function setProviderService(
       }),
     },
   });
+  if (mapped.count === 0) return { ok: false, error: "상품을 찾을 수 없습니다." };
 
   revalidatePath("/admin/products");
   return { ok: true };
@@ -145,7 +148,8 @@ export async function setProviderService(
 
 export async function toggleProduct(id: string, isActive: boolean): Promise<Result> {
   if (!(await requireAdmin())) return { ok: false, error: "권한이 없습니다." };
-  await prisma.product.update({ where: { id }, data: { isActive } });
+  const upd = await prisma.product.updateMany({ where: { id }, data: { isActive } });
+  if (upd.count === 0) return { ok: false, error: "상품을 찾을 수 없습니다." };
   revalidatePath("/");
   revalidatePath("/admin/products");
   return { ok: true };

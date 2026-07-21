@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { fmtKSTStamp } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export async function GET(req: Request) {
     lines.push(
       [
         csvCell(o.orderNo),
-        csvCell(o.createdAt.toISOString().replace("T", " ").slice(0, 19)),
+        csvCell(fmtKSTStamp(o.createdAt)),
         csvCell(STATUS_LABEL[o.status] ?? o.status),
         csvCell(o.user.username),
         csvCell(o.user.name),

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { fmtKST } from "@/lib/datetime";
 
 const PAGE_SIZE = 50;
 
@@ -106,9 +107,7 @@ export default async function AdminAuditPage({
               const meta = ACTION_LABEL[r.action] ?? { text: r.action, cls: "bg-soft text-gray" };
               return (
                 <div key={r.id} className="flex items-start border-t border-line px-6 py-3.5 text-sm">
-                  <div className="w-[150px] text-gray">
-                    {new Date(r.createdAt).toLocaleString("ko-KR")}
-                  </div>
+                  <div className="w-[150px] text-gray">{fmtKST(r.createdAt)}</div>
                   <div className="w-[130px] font-medium text-navy">{r.adminName}</div>
                   <div className="w-[130px]">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${meta.cls}`}>

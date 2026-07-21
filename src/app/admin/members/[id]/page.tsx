@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import MemberActions from "@/components/admin/MemberActions";
+import { fmtKST, fmtKSTDate } from "@/lib/datetime";
 
 const won = (n: number) => `${n.toLocaleString()}원`;
-const fmt = (d: Date) => new Date(d).toLocaleString("ko-KR");
-const fmtDate = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, ".");
+const fmt = (d: Date) => fmtKST(d);
+const fmtDate = (d: Date) => fmtKSTDate(d);
 
 const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
   PENDING_PAYMENT: { label: "입금대기", cls: "bg-soft text-gray" },

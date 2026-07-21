@@ -53,7 +53,10 @@ export async function deleteBlogPost(id: string): Promise<Result> {
   const admin = await getCurrentUser();
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
-  await prisma.blogPost.delete({ where: { id } });
+  // 이미 삭제된 글(P2025) 재삭제해도 500 대신 성공 처리(멱등)
+  await prisma.blogPost.delete({ where: { id } }).catch((e) => {
+    if ((e as { code?: string })?.code !== "P2025") throw e;
+  });
   revalidatePath("/blog");
   revalidatePath("/admin/blog");
   return { ok: true };

@@ -8,6 +8,7 @@ import { rateLimit, RATE_LIMITED_MSG } from "@/lib/ratelimit";
 import { dispatchOrder, forceRedispatchOrder } from "@/lib/dispatch";
 import { cancelOrders, smmConfigured, dispatchActive } from "@/lib/smm";
 import { logAdmin } from "@/lib/audit";
+import { overLen, LIMITS } from "@/lib/validate";
 
 export type OrderResult = { ok: boolean; error?: string; orderNo?: string; note?: string };
 
@@ -273,11 +274,13 @@ export async function setOrderMemo(id: string, memo: string): Promise<OrderResul
   if (!admin || admin.role !== "ADMIN")
     return { ok: false, error: "권한이 없습니다." };
 
+  if (overLen(memo, LIMITS.content)) return { ok: false, error: "메모가 너무 깁니다." };
   const trimmed = memo.trim();
-  await prisma.order.update({
+  const upd = await prisma.order.updateMany({
     where: { id },
     data: { adminMemo: trimmed || null },
   });
+  if (upd.count === 0) return { ok: false, error: "주문을 찾을 수 없습니다." };
 
   revalidatePath("/admin/orders");
   return { ok: true };
